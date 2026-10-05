@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Unlock CSNYPass</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="panel">
+      <header class="app-header">
+        <div class="brand">
+          <span class="brand-title">CSNYPass</span>
+        </div>
+      </header>
+      <section class="view">
+        <div class="panel-inner">
+          <div class="unlock-heading">
+            <svg
+              class="unlock-icon"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
+            >
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+            <h1>Unlock to sign in</h1>
+          </div>
+          <p class="hint" id="unlock-window-hint">
+            Use Touch ID / Face ID to fill your OneLogin password.
+          </p>
+        </div>
+        <div class="footer">
+          <p class="status" id="unlock-window-status" role="status"></p>
+          <span class="footer-spacer"></span>
+          <button type="button" class="btn btn-primary" id="btn-unlock-window">
+            Use Touch ID / Face ID
+          </button>
+        </div>
+      </section>
+    </main>
+    <script src="../dist/unlock.js"></script>
+  </body>
+</html>

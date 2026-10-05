@@ -1,0 +1,53 @@
+{
+  "manifest_version": 3,
+  "name": "CSNYPass",
+  "version": "1.4.0",
+  "description": "Fills your Collegiate Blackbaud and CSNY OneLogin sign-in steps. Credentials are encrypted and stay on your device.",
+  "minimum_chrome_version": "116",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "options_ui": {
+    "page": "popup/popup.html",
+    "open_in_tab": true
+  },
+  "background": {
+    "service_worker": "dist/background.js"
+  },
+  "permissions": [
+    "storage",
+    "webNavigation",
+    "contextMenus",
+    "alarms"
+  ],
+  "host_permissions": [
+    "https://collegiateschool.myschoolapp.com/*",
+    "https://csny.onelogin.com/*",
+    "https://app.blackbaud.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://collegiateschool.myschoolapp.com/app*",
+        "https://csny.onelogin.com/login*",
+        "https://app.blackbaud.com/signin*"
+      ],
+      "js": [
+        "dist/content.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "csnypass@techiebirb.github",
+      "strict_min_version": "109.0"
+    }
+  },
+  "action": {
+    "default_title": "CSNYPass"
+  }
+}

@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>CSNYPass</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="panel">
+      <header class="app-header">
+        <div class="brand">
+          <span class="brand-title">CSNYPass</span>
+        </div>
+        <span id="automation-chip" class="chip" hidden aria-live="polite"></span>
+      </header>
+
+      <section id="view-unlock" class="view" hidden>
+        <div class="panel-inner">
+          <div class="unlock-heading">
+            <svg
+              class="unlock-icon"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
+            >
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+            <h1 id="unlock-title">Settings locked</h1>
+          </div>
+          <p class="hint" id="unlock-intro-hint">
+            Enter your settings password to view or change your saved login details.
+          </p>
+          <p class="hint warning-banner" id="unlock-corrupt-banner" hidden>
+            Saved settings on this device could not be read. Login automation may not work
+            until you clear data and set up again.
+          </p>
+          <div class="section section-compact" id="unlock-bio-section" hidden>
+            <button type="button" class="btn btn-primary btn-block" id="btn-unlock-bio">
+              Unlock with Touch ID / Face ID
+            </button>
+          </div>
+          <div class="section section-compact" id="unlock-form-section">
+            <label class="field" for="unlock-password">Settings password</label>
+            <div class="password-wrap">
+              <input
+                type="password"
+                id="unlock-password"
+                autocomplete="current-password"
+              />
+              <button
+                type="button"
+                class="toggle-pw"
+                data-target="unlock-password"
+                aria-label="Show password"
+              >
+                Show
+              </button>
+            </div>
+          </div>
+          <details class="help-details">
+            <summary>Help</summary>
+            <p class="hint forgot-hint">
+              Forgot your settings password, or can&rsquo;t use Touch ID / Face ID anymore? Saved
+              data can&rsquo;t be recovered. Clearing it is the only way back in.
+            </p>
+            <p class="hint">
+              <button type="button" class="btn-link btn-link-danger" id="btn-reset-from-unlock">
+                Clear all saved data and start over
+              </button>
+            </p>
+            <p class="hint help-hint">
+              Sign-in not working? See
+              <a
+                href="https://github.com/techiebirb/CSNYPass#troubleshooting"
+                target="_blank"
+                rel="noopener noreferrer"
+                >Troubleshooting</a
+              >
+              in the README.
+            </p>
+          </details>
+        </div>
+        <div class="footer">
+          <p class="status" id="unlock-status" role="status"></p>
+          <span class="footer-spacer"></span>
+          <button type="button" class="btn btn-primary" id="btn-unlock">Unlock</button>
+        </div>
+      </section>
+
+      <form id="view-setup" class="view panel-form" novalidate>
+        <div class="panel-inner">
+          <h1 class="page-title" id="setup-title">Get started</h1>
+          <div id="setup-intro-block">
+            <p class="welcome">
+              Set your school email once; we&rsquo;ll fill login steps for you.
+            </p>
+            <ul class="site-list">
+              <li>
+                <strong>Blackbaud student portal</strong> &mdash; fills your email; you enter
+                your Blackbaud password yourself.
+              </li>
+              <li>
+                <strong>Collegiate OneLogin</strong> &mdash; fills username and your saved
+                OneLogin password when provided.
+              </li>
+            </ul>
+            <details class="site-details">
+              <summary>Learn more (site URLs)</summary>
+              <p class="hint">
+                Blackbaud: <code>collegiateschool.myschoolapp.com</code><br />
+                OneLogin: <code>csny.onelogin.com/login</code> or
+                <code>/login2</code>
+              </p>
+            </details>
+          </div>
+          <p class="hint migration-banner" id="setup-migration-banner" hidden>
+            Your login details are already saved on this device. Choose a settings password
+            below to protect the settings screen. You do not need to re-enter your email or
+            OneLogin password.
+          </p>
+          <div id="setup-credentials">
+            <section class="section">
+              <h2 class="section-title">Login details</h2>
+              <p class="hint section-hint">
+                OneLogin password is optional if you only use the Blackbaud email step.
+              </p>
+              <label class="field" for="cas-email">Email (school login username)</label>
+              <input type="email" id="cas-email" autocomplete="email" inputmode="email" />
+              <label class="field" for="cas-password">Password (OneLogin)</label>
+              <div class="password-wrap">
+                <input
+                  type="password"
+                  id="cas-password"
+                  autocomplete="current-password"
+                />
+                <button
+                  type="button"
+                  class="toggle-pw"
+                  data-target="cas-password"
+                  aria-label="Show password"
+                >
+                  Show
+                </button>
+              </div>
+            </section>
+            <section class="section">
+              <h2 class="section-title">Behavior</h2>
+              <label class="switch-row">
+                <span class="switch-label">Enable automation</span>
+                <span class="switch">
+                  <input type="checkbox" id="cas-enabled" checked />
+                  <span class="switch-slider" aria-hidden="true"></span>
+                </span>
+              </label>
+              <label class="switch-row">
+                <span class="switch-label">Automatically click Next / Continue</span>
+                <span class="switch">
+                  <input type="checkbox" id="cas-autoClickNext" checked />
+                  <span class="switch-slider" aria-hidden="true"></span>
+                </span>
+              </label>
+            </section>
+          </div>
+          <section class="section lock-section">
+            <h2 class="section-title">Sign-in &amp; settings protection</h2>
+            <p class="hint section-hint" id="setup-lock-hint">
+              Choose how the extension protects your saved login.
+            </p>
+            <div class="mode-group" role="radiogroup" aria-label="Sign-in mode">
+              <label class="mode-option">
+                <input type="radio" name="lock-mode" id="lock-mode-auto" value="auto" checked />
+                <span>
+                  <strong>Full auto</strong>
+                  <span class="mode-desc">Signs in automatically with no prompt. Opening these settings needs a password.</span>
+                </span>
+              </label>
+              <label class="mode-option" id="lock-mode-bio-option">
+                <input type="radio" name="lock-mode" id="lock-mode-bio" value="biometric" />
+                <span>
+                  <strong>Fingerprint / Face ID</strong>
+                  <span class="mode-desc">Your saved login stays locked until you use Touch ID / Face ID. Needed to sign in and to open settings.</span>
+                </span>
+              </label>
+            </div>
+            <p class="hint" id="lock-bio-unsupported" hidden>
+              Fingerprint / Face ID isn&rsquo;t available in this browser or on this device.
+            </p>
+            <div id="lock-auto-fields">
+              <label class="switch-row">
+                <span class="switch-label">Use OneLogin password to unlock settings</span>
+                <span class="switch">
+                  <input type="checkbox" id="lock-same-as-login" />
+                  <span class="switch-slider" aria-hidden="true"></span>
+                </span>
+              </label>
+              <div id="lock-custom-fields">
+                <label class="field" for="lock-password">Settings password</label>
+              <div class="password-wrap">
+                <input type="password" id="lock-password" autocomplete="new-password" />
+                <button type="button" class="toggle-pw" data-target="lock-password" aria-label="Show password">Show</button>
+              </div>
+                <label class="field" for="lock-password-confirm">Confirm settings password</label>
+              <div class="password-wrap">
+                <input type="password" id="lock-password-confirm" autocomplete="new-password" />
+                <button type="button" class="toggle-pw" data-target="lock-password-confirm" aria-label="Show password">Show</button>
+              </div>
+              </div>
+            </div>
+            <div id="lock-bio-fields" hidden>
+              <label class="field" for="lock-policy">How long one unlock lasts</label>
+              <select id="lock-policy">
+                <option value="attempt">Every sign-in (ask each time)</option>
+                <option value="session" selected>Until I close the browser</option>
+                <option value="minutes">A set number of minutes</option>
+              </select>
+              <div id="lock-minutes-wrap" hidden>
+                <label class="field field-inline" for="lock-minutes">Minutes</label>
+                <input type="number" id="lock-minutes" min="1" max="1440" step="1" value="30" />
+              </div>
+              <p class="hint">
+                If you lose this device or change its biometrics, saved data can&rsquo;t be recovered.
+                You would have to clear it and start over.
+              </p>
+            </div>
+          </section>
+          <details class="section-advanced" id="setup-advanced">
+            <summary>Advanced</summary>
+            <label class="field" for="cas-clickDelaySlider"
+              >Wait before clicking Next / Continue</label
+            >
+            <p class="hint delay-live">
+              <span id="cas-clickDelayLabel">0.3 s</span>
+            </p>
+            <input
+              type="range"
+              id="cas-clickDelaySlider"
+              min="0"
+              max="5000"
+              step="50"
+              value="300"
+            />
+            <label class="field field-inline" for="cas-clickDelayMs">Milliseconds</label>
+            <input
+              type="number"
+              id="cas-clickDelayMs"
+              min="0"
+              max="5000"
+              step="50"
+              value="300"
+            />
+            <p class="hint">
+              Increase if Next stays gray (try 0.5&ndash;1 s).
+            </p>
+          </details>
+        </div>
+        <div class="footer">
+          <p class="status" id="setup-status" role="status"></p>
+          <span class="footer-spacer"></span>
+          <button type="submit" class="btn btn-primary btn-save" id="btn-setup-save">Save</button>
+        </div>
+      </form>
+
+      <form id="view-editor" class="view panel-form" hidden novalidate>
+        <div class="panel-inner">
+          <section class="section">
+            <h2 class="section-title">Login details</h2>
+            <label class="field" for="edit-email">Email (school login username)</label>
+            <input type="email" id="edit-email" autocomplete="email" inputmode="email" />
+            <label class="field" for="edit-password">Password (OneLogin)</label>
+            <div class="password-wrap">
+              <input type="password" id="edit-password" autocomplete="current-password" />
+              <button
+                type="button"
+                class="toggle-pw"
+                data-target="edit-password"
+                aria-label="Show password"
+              >
+                Show
+              </button>
+            </div>
+          </section>
+          <section class="section">
+            <h2 class="section-title">Behavior</h2>
+            <label class="switch-row">
+              <span class="switch-label">Enable automation</span>
+              <span class="switch">
+                <input type="checkbox" id="edit-enabled" checked />
+                <span class="switch-slider" aria-hidden="true"></span>
+              </span>
+            </label>
+            <label class="switch-row">
+              <span class="switch-label">Automatically click Next / Continue</span>
+              <span class="switch">
+                <input type="checkbox" id="edit-autoClickNext" checked />
+                <span class="switch-slider" aria-hidden="true"></span>
+              </span>
+            </label>
+          </section>
+          <details class="section lock-section" id="edit-lock-section">
+            <summary class="section-title-inline">Sign-in &amp; settings protection</summary>
+            <p class="hint section-hint">
+              Switch between Full auto and Fingerprint / Face ID, or change how long an unlock lasts.
+            </p>
+            <div class="mode-group" role="radiogroup" aria-label="Sign-in mode">
+              <label class="mode-option">
+                <input type="radio" name="edit-lock-mode" id="edit-lock-mode-auto" value="auto" checked />
+                <span>
+                  <strong>Full auto</strong>
+                  <span class="mode-desc">Signs in automatically with no prompt. Opening these settings needs a password.</span>
+                </span>
+              </label>
+              <label class="mode-option" id="edit-lock-mode-bio-option">
+                <input type="radio" name="edit-lock-mode" id="edit-lock-mode-bio" value="biometric" />
+                <span>
+                  <strong>Fingerprint / Face ID</strong>
+                  <span class="mode-desc">Your saved login stays locked until you use Touch ID / Face ID. Needed to sign in and to open settings.</span>
+                </span>
+              </label>
+            </div>
+            <p class="hint" id="edit-lock-bio-unsupported" hidden>
+              Fingerprint / Face ID isn&rsquo;t available in this browser or on this device.
+            </p>
+            <div id="edit-lock-auto-fields">
+              <label class="switch-row">
+                <span class="switch-label">Use OneLogin password to unlock settings</span>
+                <span class="switch">
+                  <input type="checkbox" id="edit-lock-same-as-login" />
+                  <span class="switch-slider" aria-hidden="true"></span>
+                </span>
+              </label>
+              <div id="edit-lock-custom-fields">
+                <label class="field" for="edit-lock-password">Settings password</label>
+              <div class="password-wrap">
+                <input type="password" id="edit-lock-password" autocomplete="new-password" />
+                <button type="button" class="toggle-pw" data-target="edit-lock-password" aria-label="Show password">Show</button>
+              </div>
+                <label class="field" for="edit-lock-password-confirm">Confirm settings password</label>
+              <div class="password-wrap">
+                <input type="password" id="edit-lock-password-confirm" autocomplete="new-password" />
+                <button type="button" class="toggle-pw" data-target="edit-lock-password-confirm" aria-label="Show password">Show</button>
+              </div>
+              </div>
+            </div>
+            <div id="edit-lock-bio-fields" hidden>
+              <label class="field" for="edit-lock-policy">How long one unlock lasts</label>
+              <select id="edit-lock-policy">
+                <option value="attempt">Every sign-in (ask each time)</option>
+                <option value="session" selected>Until I close the browser</option>
+                <option value="minutes">A set number of minutes</option>
+              </select>
+              <div id="edit-lock-minutes-wrap" hidden>
+                <label class="field field-inline" for="edit-lock-minutes">Minutes</label>
+                <input type="number" id="edit-lock-minutes" min="1" max="1440" step="1" value="30" />
+              </div>
+              <p class="hint">
+                If you lose this device or change its biometrics, saved data can&rsquo;t be recovered.
+                You would have to clear it and start over.
+              </p>
+            </div>
+            <button type="button" class="btn btn-secondary" id="btn-update-lock">
+              Update protection
+            </button>
+            <p class="status" id="edit-lock-status" role="status"></p>
+          </details>
+          <details class="section-advanced">
+            <summary>Advanced</summary>
+            <label class="field" for="edit-clickDelaySlider"
+              >Wait before clicking Next / Continue</label
+            >
+            <p class="hint delay-live">
+              <span id="edit-clickDelayLabel">0.3 s</span>
+            </p>
+            <input
+              type="range"
+              id="edit-clickDelaySlider"
+              min="0"
+              max="5000"
+              step="50"
+              value="300"
+            />
+            <label class="field field-inline" for="edit-clickDelayMs">Milliseconds</label>
+            <input
+              type="number"
+              id="edit-clickDelayMs"
+              min="0"
+              max="5000"
+              step="50"
+              value="300"
+            />
+            <p class="hint">Increase if Next stays gray (try 0.5&ndash;1 s).</p>
+          </details>
+          <details class="site-details editor-sites">
+            <summary>Supported sites</summary>
+            <ul class="site-list">
+              <li>
+                <strong>Blackbaud student portal</strong> &mdash; fills email; you enter
+                Blackbaud password yourself.
+              </li>
+              <li>
+                <strong>Collegiate OneLogin</strong> &mdash; username + saved OneLogin password.
+              </li>
+            </ul>
+            <p class="hint">
+              Blackbaud: <code>collegiateschool.myschoolapp.com</code><br />
+              OneLogin: <code>csny.onelogin.com/login</code> or <code>/login2</code>
+            </p>
+          </details>
+        </div>
+        <div class="footer">
+          <p class="status" id="editor-status" role="status"></p>
+          <span class="footer-spacer"></span>
+          <button type="submit" class="btn btn-primary btn-save" id="btn-editor-save">Save</button>
+        </div>
+      </form>
+
+    </main>
+    <script src="../dist/popup.js"></script>
+  </body>
+</html>
