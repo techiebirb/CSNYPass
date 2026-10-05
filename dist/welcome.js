@@ -1015,7 +1015,7 @@
     }
   });
 
-  // extension/popup/popup.js
+  // extension/popup/welcome.js
   var import_webextension_polyfill = __toESM(require_browser_polyfill(), 1);
 
   // shared/settings-schema.js
@@ -1098,6 +1098,186 @@
     }
     return { ok: true, mode };
   }
+
+  // shared/lib/dom.js
+  var CollegiateDom = /* @__PURE__ */ (() => {
+    const LOG_PREFIX = "[CSNYPass]";
+    function debug(...args) {
+      console.debug(LOG_PREFIX, ...args);
+    }
+    function queryFirst(selectors, root = document) {
+      for (const selector of selectors) {
+        try {
+          const el = root.querySelector(selector);
+          if (el) return el;
+        } catch {
+        }
+      }
+      return null;
+    }
+    function isVisible(el) {
+      if (!el || !(el instanceof HTMLElement)) return false;
+      if (el.hidden) return false;
+      const style = getComputedStyle(el);
+      if (style.display === "none" || style.visibility === "hidden") return false;
+      return el.offsetParent !== null || style.position === "fixed";
+    }
+    function setNativeInputValue(input, value) {
+      const proto = input instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+      const descriptor = Object.getOwnPropertyDescriptor(proto, "value");
+      if (descriptor?.set) {
+        descriptor.set.call(input, value);
+      } else {
+        input.value = value;
+      }
+    }
+    function fillInput(input, value) {
+      if (!input || input.disabled || input.readOnly) return false;
+      input.focus();
+      setNativeInputValue(input, "");
+      setNativeInputValue(input, value);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+      return input.value === value;
+    }
+    function findNextButton(selectors) {
+      const bySelector = queryFirst(selectors);
+      if (bySelector && isVisible(bySelector) && !bySelector.disabled) {
+        return bySelector;
+      }
+      const candidates = document.querySelectorAll(
+        'button, input[type="submit"], input[type="button"]'
+      );
+      const labelRe = /^(next|continue)$/i;
+      for (const el of candidates) {
+        if (!isVisible(el) || el.disabled) continue;
+        const text = (el.textContent || el.value || el.getAttribute("aria-label") || "").trim();
+        if (labelRe.test(text)) return el;
+      }
+      return bySelector;
+    }
+    function waitFor(conditionFn, timeoutMs = 15e3, pollMs = 100) {
+      return new Promise((resolve) => {
+        const start = Date.now();
+        let observer;
+        let interval;
+        const finish = (value) => {
+          if (observer) observer.disconnect();
+          clearInterval(interval);
+          resolve(value);
+          return true;
+        };
+        const tryResolve = () => {
+          const result = conditionFn();
+          if (result) return finish(result);
+          if (Date.now() - start >= timeoutMs) return finish(null);
+          return false;
+        };
+        if (tryResolve()) return;
+        observer = new MutationObserver(() => {
+          tryResolve();
+        });
+        observer.observe(document.documentElement, {
+          childList: true,
+          subtree: true,
+          attributes: true
+        });
+        interval = setInterval(tryResolve, pollMs);
+      });
+    }
+    function sleep(ms) {
+      return new Promise((r) => setTimeout(r, ms));
+    }
+    async function clickWhenReady(button, delayMs) {
+      if (!button) return false;
+      if (delayMs > 0) await sleep(delayMs);
+      if (button.disabled || !isVisible(button)) return false;
+      button.click();
+      return true;
+    }
+    return {
+      debug,
+      queryFirst,
+      isVisible,
+      fillInput,
+      findNextButton,
+      waitFor,
+      clickWhenReady
+    };
+  })();
+
+  // shared/config/sites.js
+  var BLACKBAUD_SIGN_IN_URL = "https://collegiateschool.myschoolapp.com/app";
+  function findLabeledButton(labelRe) {
+    for (const el of document.querySelectorAll(
+      'button, input[type="submit"], input[type="button"]'
+    )) {
+      if (!CollegiateDom.isVisible(el) || el.disabled) continue;
+      const text = (el.textContent || el.value || el.getAttribute("aria-label") || "").trim();
+      if (labelRe.test(text)) return el;
+    }
+    return null;
+  }
+  function createBlackbaudSiteConfig(id, hostPattern) {
+    return {
+      id,
+      runFlow: "blackbaudEmail",
+      hostPattern,
+      pathPattern: /\/app/i,
+      emailSelectors: ["#Username"],
+      nextSelectors: ["#nextBtn", 'input[type="submit"][value="Next"]'],
+      /**
+       * The whole /app area is the signed-in site, so the URL can't tell us. Only the
+       * Blackbaud sign-in form (email box + Next, no password box) counts.
+       */
+      isSignInPage() {
+        const username = document.getElementById("Username");
+        const next = document.getElementById("nextBtn");
+        const password = document.getElementById("Password");
+        return CollegiateDom.isVisible(username) && CollegiateDom.isVisible(next) && !CollegiateDom.isVisible(password);
+      },
+      isEmailStep() {
+        const password = document.getElementById("Password");
+        if (!password) return true;
+        return password.offsetParent === null;
+      }
+    };
+  }
+  var COLLEGIATE_SITE_CONFIGS = [
+    createBlackbaudSiteConfig(
+      "collegiate-school-nyc",
+      /^collegiateschool\.myschoolapp\.com$/i
+    ),
+    {
+      id: "blackbaud-app-signin",
+      runFlow: "blackbaudSsoPick",
+      hostPattern: /^app\.blackbaud\.com$/i,
+      pathPattern: /\/signin/i,
+      ssoButtonLabel: /Collegiate School/i,
+      isSignInPage() {
+        return findLabeledButton(this.ssoButtonLabel) !== null;
+      }
+    },
+    {
+      id: "csny-onelogin",
+      runFlow: "oneLogin",
+      hostPattern: /^csny\.onelogin\.com$/i,
+      pathPattern: /\/login2?(?:\/|\?|#|$)/i,
+      usernameSelectors: ["#username", 'input[name="username"]'],
+      passwordSelectors: ["#password", 'input[name="password"]'],
+      submitSelectors: ['button[type="submit"]'],
+      isSignInPage() {
+        return this.getStep() !== null;
+      },
+      getStep() {
+        const password = CollegiateDom.queryFirst(this.passwordSelectors);
+        if (password && CollegiateDom.isVisible(password)) return "password";
+        const username = CollegiateDom.queryFirst(this.usernameSelectors);
+        if (username && CollegiateDom.isVisible(username)) return "username";
+        return null;
+      }
+    }
+  ];
 
   // shared/lib/bytes.js
   function bytesToBase64(bytes) {
@@ -1251,10 +1431,6 @@
     el.textContent = message || "";
     el.className = "status" + (message ? ok ? " ok" : " err" : "");
   }
-  function setPrimaryBusy(button, busy) {
-    if (!button) return;
-    button.disabled = busy;
-  }
   function wirePasswordToggles() {
     document.querySelectorAll(".toggle-pw").forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -1354,456 +1530,301 @@
     const enrollment = await createBiometricCredential();
     return { ...lockConfig, enrollment };
   }
-
-  // extension/popup/popup.js
-  var sessionNonce = null;
-  var migrationPending = false;
-  var settingsCorrupt = false;
-  var currentLockMode = null;
-  var biometricInfo = null;
-  var biometricSupported = false;
-  var automationChip = document.querySelector("#automation-chip");
-  function applyBiometricAvailability2(prefix) {
-    applyBiometricAvailability(prefix, biometricSupported);
-  }
-  function openWelcomeTab() {
-    import_webextension_polyfill.default.tabs.create({ url: import_webextension_polyfill.default.runtime.getURL("popup/welcome.html") }).catch(() => {
+  function validateLockConfigForSetup(lockConfig, loginPassword) {
+    if (lockConfig.mode === LOCK_MODES.BIOMETRIC) return { ok: true };
+    return validateLockSetup({
+      mode: lockConfig.mode,
+      settingsPassword: lockConfig.settingsPassword,
+      confirmPassword: lockConfig.confirmPassword,
+      loginPassword
     });
-    window.close();
   }
-  var views = {
-    unlock: document.querySelector("#view-unlock"),
-    welcome: document.querySelector("#view-welcome"),
-    editor: document.querySelector("#view-editor")
+
+  // extension/popup/welcome.js
+  var EASE_OUT = "cubic-bezier(0.22, 1, 0.36, 1)";
+  var ORDER = ["intro", "login", "protect", "done"];
+  var PROGRESS_STEPS = ["login", "protect", "done"];
+  var STEP_TITLES = {
+    login: "Your school login",
+    protect: "Keep it protected",
+    done: "All set"
   };
-  var EDITOR_SESSION_MS = 30 * 60 * 1e3;
-  var editorTimer = null;
-  var editorExpiresAt = 0;
-  function stopEditorSession() {
-    clearTimeout(editorTimer);
-    editorTimer = null;
-    editorExpiresAt = 0;
+  var CONFETTI_COLORS = ["#00306b", "#f5a623", "#6cb4ee", "#0a6b32", "#e86a92"];
+  var CONFETTI_COUNT = 32;
+  var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  var $ = (sel) => document.querySelector(sel);
+  var stepsEl = $("#steps");
+  var progressEl = $("#progress");
+  var stepEls = Object.fromEntries(
+    [...document.querySelectorAll("[data-step]")].map((el) => [el.dataset.step, el])
+  );
+  var currentStep = "intro";
+  var transitioning = false;
+  var migrationPending = false;
+  var biometricSupported = false;
+  var pendingSettings = null;
+  function reducedMotion() {
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   }
-  function startEditorSession() {
-    stopEditorSession();
-    editorExpiresAt = Date.now() + EDITOR_SESSION_MS;
-    editorTimer = window.setTimeout(expireEditorSession, EDITOR_SESSION_MS);
+  function animateHeight(from, to) {
+    if (reducedMotion() || from === to) return;
+    stepsEl.animate([{ height: `${from}px` }, { height: `${to}px` }], {
+      duration: 280,
+      easing: EASE_OUT
+    });
   }
-  function expireEditorSession() {
-    if (views.editor?.hidden) return;
-    for (const id of ["#edit-email", "#edit-password"]) {
-      const el = document.querySelector(id);
-      if (el) el.value = "";
+  function withHeightChange(update) {
+    const from = stepsEl.offsetHeight;
+    update();
+    animateHeight(from, stepsEl.offsetHeight);
+  }
+  function shake(el) {
+    if (!el || reducedMotion()) return;
+    el.classList.remove("shake");
+    void el.offsetWidth;
+    el.classList.add("shake");
+    el.addEventListener("animationend", () => el.classList.remove("shake"), { once: true });
+  }
+  function burstConfetti() {
+    const host = $("#confetti");
+    if (!host || reducedMotion()) return;
+    host.replaceChildren();
+    for (let i = 0; i < CONFETTI_COUNT; i++) {
+      const angle = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 1.5;
+      const dist = 70 + Math.random() * 110;
+      const span = document.createElement("span");
+      if (Math.random() < 0.3) span.className = "round";
+      span.style.setProperty("--c", CONFETTI_COLORS[i % CONFETTI_COLORS.length]);
+      span.style.setProperty("--dx", `${Math.cos(angle) * dist}px`);
+      span.style.setProperty("--dy", `${Math.sin(angle) * dist}px`);
+      span.style.setProperty("--rot", `${(Math.random() - 0.5) * 720}deg`);
+      span.style.setProperty("--delay", `${Math.random() * 120}ms`);
+      host.append(span);
     }
-    sessionNonce = null;
-    showUnlockWithMessage("Locked after 30 minutes. Unlock again to make changes.", false);
+    window.setTimeout(() => host.replaceChildren(), 1900);
   }
-  document.addEventListener("visibilitychange", () => {
-    if (!document.hidden && editorExpiresAt && Date.now() >= editorExpiresAt) {
-      expireEditorSession();
-    }
-  });
-  function showView(name) {
-    for (const [key, el] of Object.entries(views)) {
-      if (!el) continue;
-      el.hidden = key !== name;
-    }
-    if (name !== "editor") stopEditorSession();
-    syncAutomationChipForView(name);
+  function updateProgress(name) {
+    const idx = PROGRESS_STEPS.indexOf(name);
+    progressEl.hidden = idx === -1;
+    if (idx === -1) return;
+    const finished = name === "done";
+    progressEl.style.setProperty("--p", String(finished ? 1 : idx / (PROGRESS_STEPS.length - 1)));
+    [...progressEl.children].forEach((li, i) => {
+      li.classList.toggle("is-done", finished || i < idx);
+      li.classList.toggle("is-current", !finished && i === idx);
+      if (i === idx && !finished) li.setAttribute("aria-current", "step");
+      else li.removeAttribute("aria-current");
+    });
   }
-  function showUnlockWithMessage(message, ok = true) {
-    showView("unlock");
-    applyCorruptUnlockUi();
-    const passwordEl = document.querySelector("#unlock-password");
-    if (passwordEl) passwordEl.value = "";
-    setStatus(document.querySelector("#unlock-status"), message, ok);
-    if (!settingsCorrupt && currentLockMode !== LOCK_MODES.BIOMETRIC) {
-      passwordEl?.focus();
-    }
-    if (ok && message) {
-      window.setTimeout(() => {
-        const statusEl = document.querySelector("#unlock-status");
-        if (statusEl?.textContent === message) {
-          setStatus(statusEl, "", false);
-        }
-      }, 3e3);
-    }
+  function settle(stepEl, name) {
+    const target = stepEl.querySelector("[data-autofocus]") ?? stepEl.querySelector("h1");
+    target?.focus({ preventScroll: true });
+    const idx = PROGRESS_STEPS.indexOf(name);
+    $("#step-announce").textContent = idx === -1 ? "" : `Step ${idx + 1} of ${PROGRESS_STEPS.length}: ${STEP_TITLES[name]}`;
   }
-  function applyCorruptUnlockUi() {
-    const corrupt = settingsCorrupt;
-    const biometric = currentLockMode === LOCK_MODES.BIOMETRIC;
-    const banner = document.querySelector("#unlock-corrupt-banner");
-    const formSection = document.querySelector("#unlock-form-section");
-    const bioSection = document.querySelector("#unlock-bio-section");
-    const unlockBtn = document.querySelector("#btn-unlock");
-    const intro = document.querySelector("#unlock-intro-hint");
-    if (banner) banner.hidden = !corrupt;
-    if (formSection) formSection.hidden = corrupt || biometric;
-    if (bioSection) bioSection.hidden = corrupt || !biometric;
-    if (unlockBtn) unlockBtn.hidden = corrupt || biometric;
-    if (intro) {
-      intro.hidden = corrupt;
-      intro.textContent = biometric ? "Use Touch ID / Face ID to view or change your saved login details." : "Enter your settings password to view or change your saved login details.";
-    }
-  }
-  function updateAutomationChip(enabled) {
-    if (!automationChip) return;
-    automationChip.hidden = false;
-    automationChip.textContent = enabled ? "Automation on" : "Automation off";
-    automationChip.className = "chip " + (enabled ? "chip-on" : "chip-off");
-  }
-  function hideAutomationChip() {
-    if (!automationChip) return;
-    automationChip.hidden = true;
-    automationChip.textContent = "";
-    automationChip.className = "chip";
-  }
-  function syncAutomationChipForView(viewName) {
-    if (viewName === "editor") {
-      const enabled = document.querySelector("#edit-enabled")?.checked !== false;
-      updateAutomationChip(enabled);
+  async function showStep(name, { instant = false } = {}) {
+    const next = stepEls[name];
+    const cur = stepEls[currentStep];
+    if (!next || transitioning || next === cur) return;
+    updateProgress(name);
+    if (instant || reducedMotion() || !cur || cur.hidden) {
+      for (const el of Object.values(stepEls)) el.hidden = el !== next;
+      currentStep = name;
+      settle(next, name);
       return;
     }
-    hideAutomationChip();
-  }
-  function readLockConfigFromEditor() {
-    return readLockConfig(
-      "edit-lock",
-      document.querySelector("#edit-password")?.value ?? ""
+    transitioning = true;
+    const dir = ORDER.indexOf(name) >= ORDER.indexOf(currentStep) ? 1 : -1;
+    const fromHeight = stepsEl.offsetHeight;
+    try {
+      await cur.animate(
+        [
+          { opacity: 1, transform: "none" },
+          { opacity: 0, transform: `translateX(${-24 * dir}px)` }
+        ],
+        { duration: 160, easing: "ease-in", fill: "forwards" }
+      ).finished;
+    } catch {
+    }
+    cur.getAnimations().forEach((a) => a.cancel());
+    cur.hidden = true;
+    next.hidden = false;
+    animateHeight(fromHeight, stepsEl.offsetHeight);
+    next.animate(
+      [
+        { opacity: 0, transform: `translateX(${24 * dir}px)` },
+        { opacity: 1, transform: "none" }
+      ],
+      { duration: 280, easing: EASE_OUT }
     );
+    currentStep = name;
+    transitioning = false;
+    settle(next, name);
   }
-  function loadEditorLockForm(lockMode) {
-    const biometric = lockMode === LOCK_MODES.BIOMETRIC;
-    document.querySelector("#edit-lock-mode-bio").checked = biometric;
-    document.querySelector("#edit-lock-mode-auto").checked = !biometric;
-    const sameAsLoginEl = document.querySelector("#edit-lock-same-as-login");
-    if (sameAsLoginEl) sameAsLoginEl.checked = lockMode === LOCK_MODES.SAME_AS_LOGIN;
-    document.querySelector("#edit-lock-password").value = "";
-    document.querySelector("#edit-lock-password-confirm").value = "";
-    document.querySelector("#edit-lock-policy").value = biometricInfo?.policy ?? DEFAULT_UNLOCK_POLICY;
-    document.querySelector("#edit-lock-minutes").value = String(
-      biometricInfo?.minutes ?? DEFAULT_UNLOCK_MINUTES
-    );
-    applyBiometricAvailability2("edit-lock");
-    syncLockModeVisibility("edit-lock");
-  }
-  function loadEditorFormValues(settings, lockMode = null) {
-    document.querySelector("#edit-enabled").checked = settings.enabled !== false;
-    document.querySelector("#edit-email").value = settings.email || "";
-    document.querySelector("#edit-password").value = settings.password || "";
-    document.querySelector("#edit-autoClickNext").checked = settings.autoClickNext !== false;
-    setDelayMs("edit", settings.clickDelayMs ?? DEFAULTS.clickDelayMs);
-    if (lockMode) loadEditorLockForm(lockMode);
-    syncAutomationChipForView("editor");
-  }
-  function readEditorPayload() {
+  function readLoginPayload() {
     return {
-      enabled: document.querySelector("#edit-enabled").checked,
-      email: document.querySelector("#edit-email").value.trim(),
-      password: document.querySelector("#edit-password").value,
-      autoClickNext: document.querySelector("#edit-autoClickNext").checked,
-      clickDelayMs: document.querySelector("#edit-clickDelayMs").value
+      enabled: true,
+      email: $("#cas-email").value.trim(),
+      password: $("#cas-password").value,
+      autoClickNext: $("#cas-autoClickNext").checked,
+      clickDelayMs: $("#cas-clickDelayMs").value
     };
   }
-  function showWelcome() {
-    const text = document.querySelector("#welcome-text");
-    const button = document.querySelector("#btn-open-welcome");
-    const title = document.querySelector("#welcome-title");
-    if (title) title.textContent = migrationPending ? "One more step" : "Welcome to CSNYPass";
-    if (text) {
-      text.textContent = migrationPending ? "Your login details are saved. Choose how to protect your settings to finish." : "Sign in to school in one click. Setup takes about a minute.";
-    }
-    if (button) button.textContent = migrationPending ? "Protect my settings" : "Set up CSNYPass";
-    showView("welcome");
-    button?.focus();
+  function showEmailError(message) {
+    const el = $("#email-error");
+    el.textContent = message;
+    if (message) shake($("#cas-email"));
   }
-  async function handleResetExtensionData() {
-    const confirmed = window.confirm(
-      "Clear all saved email, passwords, and protection settings on this device? This cannot be undone."
-    );
-    if (!confirmed) return false;
-    let result;
-    try {
-      result = await import_webextension_polyfill.default.runtime.sendMessage({
-        type: "RESET_EXTENSION_DATA",
-        confirm: true
-      });
-    } catch {
-      return false;
-    }
-    if (!result?.ok) {
-      window.alert(result?.error || "Could not clear extension data.");
-      return false;
-    }
-    sessionNonce = null;
-    migrationPending = false;
-    settingsCorrupt = false;
-    currentLockMode = null;
-    biometricInfo = null;
-    showWelcome();
-    openWelcomeTab();
-    return true;
-  }
-  async function refreshProtectionState() {
-    try {
-      const state = await import_webextension_polyfill.default.runtime.sendMessage({ type: "GET_POPUP_STATE" });
-      currentLockMode = state?.lockMode ?? null;
-      biometricInfo = state?.biometric ?? null;
-    } catch {
-    }
-  }
-  function enterEditor(settings) {
-    loadEditorFormValues(normalizeSettings(settings), currentLockMode);
-    setStatus(document.querySelector("#edit-lock-status"), "", false);
-    showView("editor");
-    startEditorSession();
-    document.querySelector("#edit-email")?.focus();
-  }
-  async function handleUnlock() {
-    const statusEl = document.querySelector("#unlock-status");
-    const unlockBtn = document.querySelector("#btn-unlock");
-    setStatus(statusEl, "", false);
-    const password = document.querySelector("#unlock-password")?.value ?? "";
-    setPrimaryBusy(unlockBtn, true);
-    let result;
-    try {
-      result = await import_webextension_polyfill.default.runtime.sendMessage({
-        type: "UNLOCK_SETTINGS",
-        password
-      });
-    } catch (err) {
-      const message = err && typeof err.message === "string" ? err.message : "Could not unlock settings.";
-      setStatus(statusEl, message, false);
-      setPrimaryBusy(unlockBtn, false);
-      return;
-    }
-    setPrimaryBusy(unlockBtn, false);
-    if (!result?.ok) {
-      setStatus(statusEl, result?.error || "Incorrect settings password.", false);
-      if (result?.corrupt) {
-        settingsCorrupt = true;
-        showUnlockWithMessage(result.error || "Saved settings could not be read.", false);
-      }
-      return;
-    }
-    sessionNonce = result.sessionNonce || null;
-    await refreshProtectionState();
-    document.querySelector("#unlock-password").value = "";
-    enterEditor(result.settings);
-  }
-  async function handleBiometricUnlock() {
-    const statusEl = document.querySelector("#unlock-status");
-    const button = document.querySelector("#btn-unlock-bio");
-    setStatus(statusEl, "", false);
-    if (!biometricInfo) {
-      setStatus(statusEl, "Touch ID / Face ID isn't set up.", false);
-      return;
-    }
-    setPrimaryBusy(button, true);
-    let result;
-    try {
-      const prfOutput = await getPrfOutput(biometricInfo);
-      result = await import_webextension_polyfill.default.runtime.sendMessage({ type: "UNLOCK_BIOMETRIC", prfOutput });
-    } catch (err) {
-      setStatus(statusEl, biometricErrorMessage(err), false);
-      setPrimaryBusy(button, false);
-      return;
-    }
-    setPrimaryBusy(button, false);
-    if (!result?.ok) {
-      setStatus(statusEl, result?.error || "Could not unlock settings.", false);
-      if (result?.corrupt) {
-        settingsCorrupt = true;
-        showUnlockWithMessage(result.error || "Saved settings could not be read.", false);
-      }
-      return;
-    }
-    sessionNonce = result.sessionNonce || null;
-    enterEditor(result.settings);
-  }
-  async function handleEditorSave(e) {
+  function handleLoginSubmit(e) {
     e.preventDefault();
-    const statusEl = document.querySelector("#editor-status");
-    const saveBtn = document.querySelector("#btn-editor-save");
-    setStatus(statusEl, "", false);
-    const payload = readEditorPayload();
-    const validation = validateSettingsForSave(payload);
+    const validation = validateSettingsForSave(readLoginPayload());
     if (!validation.ok) {
-      setStatus(statusEl, validation.error, false);
-      document.querySelector("#edit-email")?.focus();
+      showEmailError(validation.error);
+      $("#cas-email").focus();
       return;
     }
-    if (currentLockMode === LOCK_MODES.SAME_AS_LOGIN && !validation.settings.password.trim()) {
-      setStatus(
-        statusEl,
-        "Your OneLogin password unlocks settings. Choose a separate settings password under protection before removing it.",
-        false
-      );
-      document.querySelector("#edit-password")?.focus();
-      return;
+    showEmailError("");
+    pendingSettings = validation.settings;
+    showStep("protect");
+  }
+  function setFinishBusy(busy) {
+    const button = $("#btn-finish");
+    button.disabled = busy;
+    button.classList.toggle("is-busy", busy);
+  }
+  function protectError(message) {
+    const el = $("#protect-status");
+    setStatus(el, message, false);
+    shake(el);
+  }
+  async function handleProtectSubmit(e) {
+    e.preventDefault();
+    const statusEl = $("#protect-status");
+    setStatus(statusEl, "", false);
+    const loginPassword = pendingSettings?.password ?? "";
+    let lockConfig = readLockConfig("lock", loginPassword);
+    if (!migrationPending || lockConfig.mode === LOCK_MODES.CUSTOM) {
+      const lockValidation = validateLockConfigForSetup(lockConfig, loginPassword);
+      if (!lockValidation.ok) {
+        protectError(lockValidation.error);
+        return;
+      }
     }
-    setPrimaryBusy(saveBtn, true);
+    setFinishBusy(true);
+    if (lockConfig.mode === LOCK_MODES.BIOMETRIC) {
+      setStatus(statusEl, "Waiting for Touch ID / Face ID\u2026", true);
+      statusEl.classList.add("waiting");
+      try {
+        lockConfig = await attachBiometricEnrollment(lockConfig);
+      } catch (err) {
+        protectError(biometricErrorMessage(err));
+        setFinishBusy(false);
+        return;
+      }
+    }
     let result;
     try {
       result = await import_webextension_polyfill.default.runtime.sendMessage({
         type: "SAVE_SETTINGS",
-        settings: validation.settings,
-        sessionNonce
-      });
-    } catch (err) {
-      const message = err && typeof err.message === "string" ? err.message : "Could not save settings.";
-      setStatus(statusEl, message, false);
-      setPrimaryBusy(saveBtn, false);
-      return;
-    }
-    setPrimaryBusy(saveBtn, false);
-    if (!result?.ok) {
-      setStatus(statusEl, result?.error || "Could not save settings.", false);
-      if (result?.corrupt) {
-        settingsCorrupt = true;
-        sessionNonce = null;
-        showUnlockWithMessage(result.error || "Saved settings could not be read.", false);
-        return;
-      }
-      if (result?.locked || result?.error?.includes("Unlock")) {
-        sessionNonce = null;
-        showUnlockWithMessage(result?.error || "Unlock the settings screen first.", false);
-      }
-      return;
-    }
-    setStatus(statusEl, "Settings saved.", true);
-    updateAutomationChip(validation.settings.enabled !== false);
-    window.setTimeout(() => setStatus(statusEl, "", false), 2e3);
-  }
-  async function handleUpdateLock() {
-    const statusEl = document.querySelector("#edit-lock-status");
-    setStatus(statusEl, "", false);
-    let lockConfig = readLockConfigFromEditor();
-    const loginPassword = document.querySelector("#edit-password")?.value ?? "";
-    const alreadyBiometric = currentLockMode === LOCK_MODES.BIOMETRIC;
-    if (lockConfig.mode === LOCK_MODES.BIOMETRIC) {
-    } else if (lockConfig.mode === LOCK_MODES.CUSTOM) {
-      const lockValidation = validateLockSetup({
-        mode: lockConfig.mode,
-        settingsPassword: lockConfig.settingsPassword,
-        confirmPassword: lockConfig.confirmPassword,
-        loginPassword: ""
-      });
-      if (!lockValidation.ok) {
-        setStatus(statusEl, lockValidation.error, false);
-        return;
-      }
-    } else {
-      const lockValidation = validateLockSetup({
-        mode: lockConfig.mode,
-        loginPassword
-      });
-      if (!lockValidation.ok) {
-        setStatus(statusEl, lockValidation.error, false);
-        return;
-      }
-    }
-    const btn = document.querySelector("#btn-update-lock");
-    setPrimaryBusy(btn, true);
-    if (lockConfig.mode === LOCK_MODES.BIOMETRIC && !alreadyBiometric) {
-      setStatus(statusEl, "Waiting for Touch ID / Face ID\u2026", true);
-      try {
-        lockConfig = await attachBiometricEnrollment(lockConfig);
-      } catch (err) {
-        setStatus(statusEl, biometricErrorMessage(err), false);
-        setPrimaryBusy(btn, false);
-        return;
-      }
-    }
-    let result;
-    try {
-      result = await import_webextension_polyfill.default.runtime.sendMessage({
-        type: "UPDATE_LOCK",
+        settings: migrationPending ? null : pendingSettings,
         lock: lockConfig,
-        sessionNonce
+        migration: migrationPending
       });
     } catch (err) {
-      const message = err && typeof err.message === "string" ? err.message : "Could not update protection.";
-      setStatus(statusEl, message, false);
-      setPrimaryBusy(btn, false);
+      protectError(err && typeof err.message === "string" ? err.message : "Could not save settings.");
+      setFinishBusy(false);
       return;
     }
-    setPrimaryBusy(btn, false);
+    setFinishBusy(false);
     if (!result?.ok) {
-      setStatus(statusEl, result?.error || "Could not update protection.", false);
-      if (result?.error?.includes("Unlock") || result?.locked || result?.corrupt) {
-        sessionNonce = null;
-        if (result?.corrupt) settingsCorrupt = true;
-        showUnlockWithMessage(result?.error || "Unlock the settings screen first.", false);
-      }
+      protectError(result?.error || "Could not save settings.");
       return;
     }
-    sessionNonce = null;
-    await refreshProtectionState();
-    showUnlockWithMessage(
-      lockConfig.mode === LOCK_MODES.BIOMETRIC ? "Protection updated. Use Touch ID / Face ID to open settings." : "Protection updated. Enter your settings password to open settings.",
-      true
-    );
+    const autoClick = pendingSettings ? pendingSettings.autoClickNext : null;
+    finishSetup(lockConfig.mode, autoClick);
   }
-  function wireLockModeControls(prefix) {
-    for (const id of [`${prefix}-mode-auto`, `${prefix}-mode-bio`, `${prefix}-same-as-login`, `${prefix}-policy`]) {
-      document.querySelector(`#${id}`)?.addEventListener("change", () => {
-        syncLockModeVisibility(prefix);
+  function describeSetup(mode, autoClick) {
+    const protection = mode === LOCK_MODES.BIOMETRIC ? "Touch ID / Face ID" : "Full auto";
+    if (autoClick === null) return protection;
+    return `${protection} \xB7 Auto-click ${autoClick ? "on" : "off"}`;
+  }
+  function finishSetup(mode, autoClick, { celebrate = true } = {}) {
+    for (const id of ["#cas-email", "#cas-password", "#lock-password", "#lock-password-confirm"]) {
+      const el = $(id);
+      if (el) el.value = "";
+    }
+    pendingSettings = null;
+    $("#done-chip").textContent = describeSetup(mode, autoClick);
+    showStep("done", { instant: !celebrate }).then(() => {
+      if (celebrate) window.setTimeout(burstConfetti, 650);
+    });
+  }
+  function wireLockControls() {
+    const ids = ["lock-mode-auto", "lock-mode-bio", "lock-same-as-login", "lock-policy"];
+    for (const id of ids) {
+      $(`#${id}`)?.addEventListener("change", () => {
+        withHeightChange(() => syncLockModeVisibility("lock"));
       });
     }
-    applyBiometricAvailability2(prefix);
-    syncLockModeVisibility(prefix);
+    applyBiometricAvailability("lock", biometricSupported);
+    syncLockModeVisibility("lock");
+  }
+  function wireEmailValidity() {
+    const input = $("#cas-email");
+    const wrap = input.closest(".email-wrap");
+    input.addEventListener("input", () => {
+      wrap.classList.toggle("is-valid", EMAIL_RE.test(input.value.trim()));
+      if ($("#email-error").textContent) showEmailError("");
+    });
+  }
+  function openSettings() {
+    import_webextension_polyfill.default.runtime.openOptionsPage().catch(() => {
+    });
   }
   async function init() {
     wirePasswordToggles();
-    wireDelayControls("edit");
+    wireDelayControls("cas");
+    setDelayMs("cas", 300);
     biometricSupported = await isBiometricSupported();
-    document.querySelector("#edit-enabled")?.addEventListener("change", () => {
-      syncAutomationChipForView("editor");
-    });
-    wireLockModeControls("edit-lock");
-    document.querySelector("#btn-open-welcome")?.addEventListener("click", openWelcomeTab);
-    document.querySelector("#view-editor")?.addEventListener("submit", handleEditorSave);
-    document.querySelector("#btn-unlock")?.addEventListener("click", handleUnlock);
-    document.querySelector("#btn-unlock-bio")?.addEventListener("click", handleBiometricUnlock);
-    document.querySelector("#btn-update-lock")?.addEventListener("click", handleUpdateLock);
-    document.querySelector("#unlock-password")?.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        handleUnlock();
-      }
-    });
-    document.querySelector("#btn-reset-from-unlock")?.addEventListener("click", () => {
-      handleResetExtensionData();
-    });
-    let popupState;
+    wireLockControls();
+    wireEmailValidity();
+    $("#btn-start").addEventListener("click", () => showStep("login"));
+    $("#form-login").addEventListener("submit", handleLoginSubmit);
+    $("#form-protect").addEventListener("submit", handleProtectSubmit);
+    $("#form-login [data-back]").addEventListener("click", () => showStep("intro"));
+    $("#form-protect [data-back]").addEventListener("click", () => showStep("login"));
+    $("#btn-open-settings").addEventListener("click", openSettings);
+    $("#btn-note-settings").addEventListener("click", openSettings);
+    $("#btn-open-signin").href = BLACKBAUD_SIGN_IN_URL;
+    let state;
     try {
-      popupState = await import_webextension_polyfill.default.runtime.sendMessage({ type: "GET_POPUP_STATE" });
+      state = await import_webextension_polyfill.default.runtime.sendMessage({ type: "GET_POPUP_STATE" });
     } catch {
-      popupState = { ok: false };
+      state = { ok: false };
     }
-    if (!popupState?.ok) {
-      showWelcome();
+    if (state?.ok && state.settingsCorrupt) {
+      showStep("note", { instant: true });
       return;
     }
-    migrationPending = popupState.migrationPending === true;
-    settingsCorrupt = popupState.settingsCorrupt === true;
-    currentLockMode = popupState.lockMode ?? null;
-    biometricInfo = popupState.biometric ?? null;
-    if (settingsCorrupt) {
-      showUnlockWithMessage("", false);
+    if (state?.ok && state.migrationPending) {
+      migrationPending = true;
+      $("#migration-banner").hidden = false;
+      $("#protect-title").textContent = "One more step";
+      $("#protect-lead").textContent = "Choose how to protect your settings.";
+      $("#btn-protect-back").hidden = true;
+      $("#lock-same-as-login").checked = state.suggestSameAsLoginLock === true;
+      syncLockModeVisibility("lock");
+      showStep("protect", { instant: true });
       return;
     }
-    if (!popupState.configured || migrationPending) {
-      showWelcome();
+    if (state?.ok && state.configured) {
+      $("#done-title").textContent = "You're already set up";
+      $("#done-lead").textContent = "CSNYPass is filling your sign-in steps.";
+      finishSetup(state.lockMode, null, { celebrate: false });
       return;
     }
-    showView("unlock");
-    applyCorruptUnlockUi();
-    if (currentLockMode !== LOCK_MODES.BIOMETRIC) {
-      document.querySelector("#unlock-password")?.focus();
-    }
+    $("#btn-start").focus({ preventScroll: true });
   }
   init();
 })();
-//# sourceMappingURL=popup.js.map
+//# sourceMappingURL=welcome.js.map

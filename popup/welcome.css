@@ -1,0 +1,848 @@
+:root {
+  --accent: #f5a623;
+  --sky: #6cb4ee;
+  --line: #cfd8e6;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.welcome-body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  position: relative;
+  overflow-x: hidden;
+  background: linear-gradient(160deg, #e8eef8 0%, #f6f8fc 45%, #fff6e6 100%);
+}
+
+/* ---- Ambient background ---- */
+.blob {
+  position: fixed;
+  width: 30rem;
+  height: 30rem;
+  border-radius: 50%;
+  filter: blur(70px);
+  opacity: 0.32;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.blob-a {
+  top: -8rem;
+  left: -8rem;
+  background: var(--brand);
+  animation: drift-a 22s ease-in-out infinite alternate;
+}
+
+.blob-b {
+  bottom: -10rem;
+  right: -8rem;
+  background: var(--sky);
+  animation: drift-b 26s ease-in-out infinite alternate;
+}
+
+@keyframes drift-a {
+  to {
+    transform: translate(9rem, 6rem) scale(1.15);
+  }
+}
+
+@keyframes drift-b {
+  to {
+    transform: translate(-8rem, -5rem) scale(1.1);
+  }
+}
+
+/* ---- Card ---- */
+.wcard {
+  position: relative;
+  z-index: 1;
+  width: min(34rem, 100%);
+  padding: 1.5rem 1.75rem 1.75rem;
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px -20px rgba(0, 48, 107, 0.35), 0 2px 8px rgba(0, 0, 0, 0.05);
+  animation: card-enter 0.45s var(--ease-out) both;
+}
+
+@keyframes card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.whead {
+  margin-bottom: 0.5rem;
+}
+
+.wordmark {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  color: var(--brand);
+}
+
+.wordmark svg {
+  width: 1.9rem;
+  height: 1.9rem;
+}
+
+/* ---- Progress ---- */
+.progress {
+  --p: 0;
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin: 1.1rem 0 0.25rem;
+  padding: 0;
+  list-style: none;
+  animation: fade-in 0.35s var(--ease-out) both;
+}
+
+.progress::before,
+.progress::after {
+  content: "";
+  position: absolute;
+  top: calc(0.875rem - 1px);
+  left: 16.667%;
+  width: 66.667%;
+  height: 2px;
+  border-radius: 2px;
+}
+
+.progress::before {
+  background: var(--line);
+}
+
+.progress::after {
+  background: var(--brand);
+  transform: scaleX(var(--p));
+  transform-origin: left;
+  transition: transform 0.5s var(--ease-out);
+}
+
+.p-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  position: relative;
+  z-index: 1;
+}
+
+.p-dot {
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  background: #fff;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  transition: background 0.3s, border-color 0.3s, color 0.3s;
+}
+
+.p-check {
+  display: none;
+  width: 0.8rem;
+  height: 0.8rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 12;
+  stroke-dashoffset: 12;
+}
+
+.p-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  transition: color 0.3s;
+}
+
+.p-step.is-current .p-dot {
+  border-color: var(--brand);
+  color: var(--brand);
+  animation: dot-pop 0.45s var(--ease-spring);
+}
+
+.p-step.is-current .p-label {
+  color: var(--brand);
+}
+
+.p-step.is-done .p-dot {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+}
+
+.p-step.is-done .p-num {
+  display: none;
+}
+
+.p-step.is-done .p-check {
+  display: block;
+  animation: draw-check 0.35s ease-out 0.15s forwards;
+}
+
+@keyframes dot-pop {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.25);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes draw-check {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* ---- Steps ---- */
+.steps {
+  position: relative;
+  overflow: hidden;
+  padding: 0.4rem;
+  margin: 0 -0.4rem;
+}
+
+.step[hidden] {
+  display: none !important;
+}
+
+.step h1 {
+  margin: 0 0 0.4rem;
+  color: var(--brand);
+  font-size: 1.5rem;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+.step h1:focus {
+  outline: none;
+}
+
+.lead {
+  margin: 0 0 1.1rem;
+  color: var(--text-muted);
+}
+
+.rise {
+  opacity: 0;
+  animation: rise 0.5s var(--ease-out) forwards;
+  animation-delay: calc(var(--i, 0) * 60ms + 120ms);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---- Intro ---- */
+.hero {
+  text-align: center;
+}
+
+.hero-art {
+  display: block;
+  width: 9rem;
+  height: 9rem;
+  margin: 0.25rem auto 0.75rem;
+  overflow: visible;
+}
+
+.hero-key {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: float 3s ease-in-out infinite;
+}
+
+.key-turn {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 0.6s var(--ease-spring);
+}
+
+.spark {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: twinkle 2.4s ease-in-out infinite;
+  transition: transform 0.35s var(--ease-spring);
+}
+
+.spark-b {
+  animation-delay: 1.1s;
+}
+
+.hero:has(.btn-cta:hover) .key-turn,
+.hero:has(.btn-cta:focus-visible) .key-turn {
+  transform: rotate(90deg);
+}
+
+.hero:has(.btn-cta:hover) .spark,
+.hero:has(.btn-cta:focus-visible) .spark {
+  transform: scale(1.4);
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-3deg);
+  }
+  50% {
+    transform: translateY(-6px) rotate(3deg);
+  }
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.values {
+  max-width: 24rem;
+  margin: 0 auto 1.4rem;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+
+.values li {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 0.7rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.values strong {
+  color: var(--text);
+}
+
+.v-icon {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 50%;
+  background: #e8eef8;
+  color: var(--brand);
+}
+
+.v-icon svg,
+.choice-icon svg {
+  width: 1.3rem;
+  height: 1.3rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.how-it-works {
+  margin: 1rem 0 0;
+  text-align: center;
+}
+
+/* ---- Buttons ---- */
+.actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1.4rem;
+}
+
+.actions-center {
+  justify-content: center;
+}
+
+.btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  transition: background 0.2s, transform 0.15s var(--ease-out), box-shadow 0.2s;
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.btn-lg {
+  min-height: 44px;
+  padding: 0.55rem 1.4rem;
+  font-size: 1rem;
+  border-radius: 12px;
+}
+
+.btn-primary {
+  box-shadow: 0 6px 16px -6px rgba(0, 48, 107, 0.6);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--brand);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: #eef2f9;
+}
+
+.arrow {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.25s var(--ease-spring);
+}
+
+.btn-cta:hover .arrow {
+  transform: translateX(4px);
+}
+
+.spinner {
+  position: absolute;
+  width: 1.1rem;
+  height: 1.1rem;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 0.2s;
+  animation: spin 0.7s linear infinite;
+}
+
+.btn-label {
+  transition: opacity 0.2s;
+}
+
+.btn.is-busy .btn-label {
+  opacity: 0;
+}
+
+.btn.is-busy .spinner {
+  opacity: 1;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---- Fields ---- */
+.optional {
+  margin-left: 0.25rem;
+  font-weight: 500;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+input:focus {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 4px rgba(0, 48, 107, 0.12);
+}
+
+input[type="email"],
+input[type="password"],
+input[type="number"],
+select {
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.email-wrap {
+  position: relative;
+}
+
+.valid-check {
+  position: absolute;
+  right: 0.7rem;
+  top: calc(50% + 0.175rem);
+  width: 1.1rem;
+  height: 1.1rem;
+  transform: translateY(-50%) scale(0.5);
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.3s var(--ease-spring);
+  pointer-events: none;
+}
+
+.valid-check circle {
+  fill: var(--status-ok);
+}
+
+.valid-check path {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.email-wrap.is-valid .valid-check {
+  opacity: 1;
+  transform: translateY(-50%) scale(1);
+}
+
+.email-wrap input {
+  padding-right: 2.4rem;
+}
+
+.field-error {
+  margin: 0.35rem 0 0;
+  color: var(--status-err);
+  font-size: 0.85rem;
+}
+
+.field-error:not(:empty),
+.status:not(:empty) {
+  animation: slide-down 0.25s var(--ease-out);
+}
+
+.field-hint {
+  margin: 0.4rem 0 0.9rem;
+  font-size: 0.8rem;
+}
+
+.shake {
+  animation: shake 0.4s ease-in-out;
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20%,
+  60% {
+    transform: translateX(-4px);
+  }
+  40%,
+  80% {
+    transform: translateX(4px);
+  }
+}
+
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+.reveal:not([hidden]) {
+  animation: reveal 0.3s var(--ease-out);
+}
+
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+.status.waiting::before {
+  content: "";
+  display: inline-block;
+  width: 0.6rem;
+  height: 0.6rem;
+  margin-right: 0.45rem;
+  border-radius: 50%;
+  background: var(--brand);
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(0.8);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+/* ---- Protection cards ---- */
+.choice-card {
+  position: relative;
+  align-items: center;
+  padding: 0.85rem 1rem;
+  border: 2px solid var(--border);
+  background: #fff;
+  transition: transform 0.2s var(--ease-out), box-shadow 0.2s, border-color 0.25s,
+    background 0.25s;
+}
+
+.choice-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px -10px rgba(0, 48, 107, 0.4);
+}
+
+.choice-card:has(input:checked) {
+  border-color: var(--brand);
+  background: var(--banner-bg);
+}
+
+.choice-card:has(input:focus-visible) {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.choice-card input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.choice-icon {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 50%;
+  background: #e8eef8;
+  color: var(--brand);
+}
+
+.choice-body {
+  flex: 1;
+}
+
+.choice-check {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  background: var(--brand);
+  transform: scale(0);
+  transition: transform 0.35s var(--ease-spring);
+}
+
+.choice-check svg {
+  width: 0.8rem;
+  height: 0.8rem;
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.choice-card:has(input:checked) .choice-check {
+  transform: scale(1);
+}
+
+/* ---- Done ---- */
+.done {
+  text-align: center;
+}
+
+.done-art {
+  position: relative;
+  width: 6rem;
+  height: 6rem;
+  margin: 0.5rem auto 0.75rem;
+}
+
+.done-check {
+  width: 100%;
+  height: 100%;
+  animation: pop 0.5s var(--ease-spring) 0.85s;
+}
+
+.dc-ring {
+  stroke-dasharray: 252;
+  stroke-dashoffset: 252;
+  animation: draw 0.55s var(--ease-out) 0.1s forwards;
+}
+
+.dc-tick {
+  stroke-dasharray: 64;
+  stroke-dashoffset: 64;
+  animation: draw 0.35s ease-out 0.6s forwards;
+}
+
+@keyframes draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes pop {
+  50% {
+    transform: scale(1.12);
+  }
+}
+
+.summary-chip {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  background: var(--chip-on-bg);
+  color: var(--chip-on-text);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.tips {
+  max-width: 24rem;
+  margin: 1rem auto 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.tips li {
+  margin-bottom: 0.5rem;
+  padding-left: 1.2rem;
+  position: relative;
+}
+
+.tips li::before {
+  content: "";
+  position: absolute;
+  left: 0.2rem;
+  top: 0.55em;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.tips strong {
+  color: var(--text);
+}
+
+.confetti {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.confetti span {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 7px;
+  height: 11px;
+  margin: -5px 0 0 -3px;
+  border-radius: 2px;
+  background: var(--c);
+  opacity: 0;
+  animation: burst 1.3s var(--ease-out) var(--delay) forwards;
+}
+
+.confetti span.round {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+@keyframes burst {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) scale(0.4) rotate(0);
+  }
+  55% {
+    opacity: 1;
+    transform: translate(var(--dx), var(--dy)) scale(1) rotate(var(--rot));
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(var(--dx) * 1.1), calc(var(--dy) + 90px)) scale(0.9)
+      rotate(calc(var(--rot) * 1.6));
+  }
+}
+
+/* ---- Small screens ---- */
+@media (max-width: 30rem) {
+  .wcard {
+    padding: 1.25rem 1.1rem 1.4rem;
+  }
+  .actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+}
+
+/* ---- Reduced motion ---- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  .blob,
+  .hero-key,
+  .spark {
+    animation: none !important;
+  }
+  .confetti {
+    display: none;
+  }
+}

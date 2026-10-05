@@ -4,18 +4,23 @@ import {
   DEFAULT_UNLOCK_MINUTES,
   DEFAULT_UNLOCK_POLICY,
   LOCK_MODES,
-  UNLOCK_POLICIES,
   normalizeSettings,
-  normalizeUnlockPolicy,
   validateLockSetup,
   validateSettingsForSave,
 } from "../../shared/settings-schema.js";
+import { getPrfOutput, isBiometricSupported } from "../../shared/lib/webauthn.js";
 import {
-  BiometricError,
-  createBiometricCredential,
-  getPrfOutput,
-  isBiometricSupported,
-} from "../../shared/lib/webauthn.js";
+  applyBiometricAvailability as applyBiometricAvailabilityFor,
+  attachBiometricEnrollment,
+  biometricErrorMessage,
+  readLockConfig,
+  setDelayMs,
+  setPrimaryBusy,
+  setStatus,
+  syncLockModeVisibility,
+  wireDelayControls,
+  wirePasswordToggles,
+} from "./setup-form.js";
 
 /** @type {string | null} */
 let sessionNonce = null;
@@ -31,9 +36,18 @@ let biometricSupported = false;
 
 const automationChip = document.querySelector("#automation-chip");
 
+function applyBiometricAvailability(prefix) {
+  applyBiometricAvailabilityFor(prefix, biometricSupported);
+}
+
+function openWelcomeTab() {
+  browser.tabs.create({ url: browser.runtime.getURL("popup/welcome.html") }).catch(() => {});
+  window.close();
+}
+
 const views = {
   unlock: document.querySelector("#view-unlock"),
-  setup: document.querySelector("#view-setup"),
+  welcome: document.querySelector("#view-welcome"),
   editor: document.querySelector("#view-editor"),
 };
 
@@ -118,43 +132,6 @@ function applyCorruptUnlockUi() {
   }
 }
 
-function clampDelayMs(ms) {
-  const n = Number(ms);
-  if (!Number.isFinite(n)) return DEFAULTS.clickDelayMs;
-  return Math.min(5000, Math.max(0, Math.round(n)));
-}
-
-function formatDelayLabel(ms) {
-  const seconds = clampDelayMs(ms) / 1000;
-  return `${seconds.toFixed(1)} s`;
-}
-
-function setDelayMs(prefix, ms) {
-  const value = clampDelayMs(ms);
-  const slider = document.querySelector(`#${prefix}-clickDelaySlider`);
-  const number = document.querySelector(`#${prefix}-clickDelayMs`);
-  const label = document.querySelector(`#${prefix}-clickDelayLabel`);
-  if (slider) slider.value = String(value);
-  if (number) number.value = String(value);
-  if (label) label.textContent = formatDelayLabel(value);
-}
-
-function wireDelayControls(prefix) {
-  const slider = document.querySelector(`#${prefix}-clickDelaySlider`);
-  const number = document.querySelector(`#${prefix}-clickDelayMs`);
-  if (!slider || !number) return;
-
-  slider.addEventListener("input", () => {
-    setDelayMs(prefix, slider.value);
-  });
-  number.addEventListener("input", () => {
-    setDelayMs(prefix, number.value);
-  });
-  number.addEventListener("change", () => {
-    setDelayMs(prefix, number.value);
-  });
-}
-
 function updateAutomationChip(enabled) {
   if (!automationChip) return;
   automationChip.hidden = false;
@@ -170,114 +147,12 @@ function hideAutomationChip() {
 }
 
 function syncAutomationChipForView(viewName) {
-  if (viewName === "unlock") {
-    hideAutomationChip();
-    return;
-  }
-  if (viewName === "setup") {
-    if (migrationPending) {
-      hideAutomationChip();
-      return;
-    }
-    const enabled = document.querySelector("#cas-enabled")?.checked !== false;
-    updateAutomationChip(enabled);
-    return;
-  }
   if (viewName === "editor") {
     const enabled = document.querySelector("#edit-enabled")?.checked !== false;
     updateAutomationChip(enabled);
+    return;
   }
-}
-
-function setStatus(el, message, ok) {
-  if (!el) return;
-  el.textContent = message || "";
-  el.className = "status" + (message ? (ok ? " ok" : " err") : "");
-}
-
-function setPrimaryBusy(button, busy) {
-  if (!button) return;
-  button.disabled = busy;
-}
-
-function wirePasswordToggles() {
-  document.querySelectorAll(".toggle-pw").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const id = btn.getAttribute("data-target");
-      const input = id ? document.querySelector(`#${id}`) : null;
-      if (!input) return;
-      const show = input.type === "password";
-      input.type = show ? "text" : "password";
-      btn.textContent = show ? "Hide" : "Show";
-      btn.setAttribute("aria-label", show ? "Hide password" : "Show password");
-    });
-  });
-}
-
-function isBiometricSelected(prefix) {
-  return document.querySelector(`#${prefix}-mode-bio`)?.checked === true;
-}
-
-function syncLockModeVisibility(prefix = "lock") {
-  const bio = isBiometricSelected(prefix);
-  const autoFields = document.querySelector(`#${prefix}-auto-fields`);
-  const bioFields = document.querySelector(`#${prefix}-bio-fields`);
-  if (autoFields) autoFields.hidden = bio;
-  if (bioFields) bioFields.hidden = !bio;
-
-  const sameAsLogin = document.querySelector(`#${prefix}-same-as-login`);
-  const customFields = document.querySelector(`#${prefix}-custom-fields`);
-  if (sameAsLogin && customFields) customFields.hidden = sameAsLogin.checked;
-
-  const policy = document.querySelector(`#${prefix}-policy`)?.value;
-  const minutesWrap = document.querySelector(`#${prefix}-minutes-wrap`);
-  if (minutesWrap) minutesWrap.hidden = policy !== UNLOCK_POLICIES.MINUTES;
-}
-
-function applyBiometricAvailability(prefix) {
-  const option = document.querySelector(`#${prefix}-mode-bio-option`);
-  const note = document.querySelector(`#${prefix}-bio-unsupported`);
-  if (option) option.hidden = !biometricSupported;
-  if (note) note.hidden = biometricSupported;
-}
-
-function readBiometricOptions(prefix) {
-  return normalizeUnlockPolicy(
-    document.querySelector(`#${prefix}-policy`)?.value,
-    document.querySelector(`#${prefix}-minutes`)?.value
-  );
-}
-
-/**
- * @param {"lock" | "edit-lock"} prefix
- * @param {string} loginPasswordValue
- */
-function readLockConfig(prefix, loginPasswordValue) {
-  if (isBiometricSelected(prefix)) {
-    return { mode: LOCK_MODES.BIOMETRIC, ...readBiometricOptions(prefix) };
-  }
-  const sameAsLogin = document.querySelector(`#${prefix}-same-as-login`)?.checked;
-  if (sameAsLogin) {
-    return {
-      mode: LOCK_MODES.SAME_AS_LOGIN,
-      loginPassword: loginPasswordValue,
-    };
-  }
-  return {
-    mode: LOCK_MODES.CUSTOM,
-    settingsPassword:
-      document.querySelector(`#${prefix}-password`)?.value ?? "",
-    confirmPassword:
-      document.querySelector(`#${prefix}-password-confirm`)?.value ?? "",
-    loginPassword: loginPasswordValue,
-  };
-}
-
-function readLockConfigFromSetup() {
-  return readLockConfig(
-    "lock",
-    document.querySelector("#cas-password")?.value ?? ""
-  );
+  hideAutomationChip();
 }
 
 function readLockConfigFromEditor() {
@@ -285,19 +160,6 @@ function readLockConfigFromEditor() {
     "edit-lock",
     document.querySelector("#edit-password")?.value ?? ""
   );
-}
-
-function biometricErrorMessage(err) {
-  if (err instanceof BiometricError) return err.message;
-  return err && typeof err.message === "string"
-    ? err.message
-    : "Touch ID / Face ID failed.";
-}
-
-/** Runs the OS biometric prompt (needs a click) and attaches the result to the lock config. */
-async function attachBiometricEnrollment(lockConfig) {
-  const enrollment = await createBiometricCredential();
-  return { ...lockConfig, enrollment };
 }
 
 function loadEditorLockForm(lockMode) {
@@ -315,26 +177,6 @@ function loadEditorLockForm(lockMode) {
   );
   applyBiometricAvailability("edit-lock");
   syncLockModeVisibility("edit-lock");
-}
-
-function loadSetupFormValues(settings) {
-  document.querySelector("#cas-enabled").checked = settings.enabled !== false;
-  document.querySelector("#cas-email").value = settings.email || "";
-  document.querySelector("#cas-password").value = settings.password || "";
-  document.querySelector("#cas-autoClickNext").checked =
-    settings.autoClickNext !== false;
-  setDelayMs("cas", settings.clickDelayMs ?? DEFAULTS.clickDelayMs);
-  syncAutomationChipForView("setup");
-}
-
-function readSetupPayload() {
-  return {
-    enabled: document.querySelector("#cas-enabled").checked,
-    email: document.querySelector("#cas-email").value.trim(),
-    password: document.querySelector("#cas-password").value,
-    autoClickNext: document.querySelector("#cas-autoClickNext").checked,
-    clickDelayMs: document.querySelector("#cas-clickDelayMs").value,
-  };
 }
 
 function loadEditorFormValues(settings, lockMode = null) {
@@ -358,18 +200,20 @@ function readEditorPayload() {
   };
 }
 
-function applyMigrationSetupUi() {
-  const banner = document.querySelector("#setup-migration-banner");
-  const credentials = document.querySelector("#setup-credentials");
-  const introBlock = document.querySelector("#setup-intro-block");
-  const advanced = document.querySelector("#setup-advanced");
-  const title = document.querySelector("#setup-title");
-  if (banner) banner.hidden = !migrationPending;
-  if (credentials) credentials.hidden = migrationPending;
-  if (introBlock) introBlock.hidden = migrationPending;
-  if (advanced) advanced.hidden = migrationPending;
-  if (title) title.textContent = migrationPending ? "Protect your settings" : "Get started";
-  syncAutomationChipForView("setup");
+/** Not set up yet (or half-migrated): the popup only points at the welcome tab. */
+function showWelcome() {
+  const text = document.querySelector("#welcome-text");
+  const button = document.querySelector("#btn-open-welcome");
+  const title = document.querySelector("#welcome-title");
+  if (title) title.textContent = migrationPending ? "One more step" : "Welcome to CSNYPass";
+  if (text) {
+    text.textContent = migrationPending
+      ? "Your login details are saved. Choose how to protect your settings to finish."
+      : "Sign in to school in one click. Setup takes about a minute.";
+  }
+  if (button) button.textContent = migrationPending ? "Protect my settings" : "Set up CSNYPass";
+  showView("welcome");
+  button?.focus();
 }
 
 async function handleResetExtensionData() {
@@ -398,104 +242,9 @@ async function handleResetExtensionData() {
   settingsCorrupt = false;
   currentLockMode = null;
   biometricInfo = null;
-  showView("setup");
-  loadSetupFormValues(normalizeSettings({}));
-  applyMigrationSetupUi();
-  document.querySelector("#cas-email")?.focus();
+  showWelcome();
+  openWelcomeTab();
   return true;
-}
-
-function validateLockConfigForSetup(lockConfig, loginPassword) {
-  if (lockConfig.mode === LOCK_MODES.BIOMETRIC) return { ok: true };
-  return validateLockSetup({
-    mode: lockConfig.mode,
-    settingsPassword: lockConfig.settingsPassword,
-    confirmPassword: lockConfig.confirmPassword,
-    loginPassword,
-  });
-}
-
-async function handleSetupSave(e) {
-  e.preventDefault();
-  const statusEl = document.querySelector("#setup-status");
-  const saveBtn = document.querySelector("#btn-setup-save");
-  setStatus(statusEl, "", false);
-
-  let lockConfig = readLockConfigFromSetup();
-  let settingsPayload = null;
-
-  if (migrationPending) {
-    const lockValidation = validateLockConfigForSetup(lockConfig, "");
-    if (!lockValidation.ok && lockConfig.mode === LOCK_MODES.CUSTOM) {
-      setStatus(statusEl, lockValidation.error, false);
-      return;
-    }
-  } else {
-    settingsPayload = readSetupPayload();
-    const settingsValidation = validateSettingsForSave(settingsPayload);
-    if (!settingsValidation.ok) {
-      setStatus(statusEl, settingsValidation.error, false);
-      document.querySelector("#cas-email")?.focus();
-      return;
-    }
-    settingsPayload = settingsValidation.settings;
-
-    const lockValidation = validateLockConfigForSetup(lockConfig, settingsPayload.password);
-    if (!lockValidation.ok) {
-      setStatus(statusEl, lockValidation.error, false);
-      return;
-    }
-  }
-
-  setPrimaryBusy(saveBtn, true);
-
-  if (lockConfig.mode === LOCK_MODES.BIOMETRIC) {
-    setStatus(statusEl, "Waiting for Touch ID / Face ID…", true);
-    try {
-      lockConfig = await attachBiometricEnrollment(lockConfig);
-    } catch (err) {
-      setStatus(statusEl, biometricErrorMessage(err), false);
-      setPrimaryBusy(saveBtn, false);
-      return;
-    }
-  }
-
-  let result;
-  try {
-    result = await browser.runtime.sendMessage({
-      type: "SAVE_SETTINGS",
-      settings: settingsPayload,
-      lock: lockConfig,
-      migration: migrationPending,
-    });
-  } catch (err) {
-    const message =
-      err && typeof err.message === "string" ? err.message : "Could not save settings.";
-    setStatus(statusEl, message, false);
-    setPrimaryBusy(saveBtn, false);
-    return;
-  }
-
-  setPrimaryBusy(saveBtn, false);
-
-  if (!result?.ok) {
-    setStatus(statusEl, result?.error || "Could not save settings.", false);
-    if (result?.corrupt) {
-      settingsCorrupt = true;
-      showUnlockWithMessage(result.error || "Saved settings could not be read.", false);
-    }
-    return;
-  }
-
-  migrationPending = false;
-  sessionNonce = null;
-  await refreshProtectionState();
-  showUnlockWithMessage(
-    lockConfig.mode === LOCK_MODES.BIOMETRIC
-      ? "Settings saved. Use Touch ID / Face ID whenever you want to change them."
-      : "Settings saved. Enter your settings password below whenever you want to change them.",
-    true
-  );
 }
 
 async function refreshProtectionState() {
@@ -744,21 +493,16 @@ function wireLockModeControls(prefix) {
 
 async function init() {
   wirePasswordToggles();
-  wireDelayControls("cas");
   wireDelayControls("edit");
   biometricSupported = await isBiometricSupported();
 
-  document.querySelector("#cas-enabled")?.addEventListener("change", () => {
-    syncAutomationChipForView("setup");
-  });
   document.querySelector("#edit-enabled")?.addEventListener("change", () => {
     syncAutomationChipForView("editor");
   });
 
-  wireLockModeControls("lock");
   wireLockModeControls("edit-lock");
 
-  document.querySelector("#view-setup")?.addEventListener("submit", handleSetupSave);
+  document.querySelector("#btn-open-welcome")?.addEventListener("click", openWelcomeTab);
   document.querySelector("#view-editor")?.addEventListener("submit", handleEditorSave);
   document.querySelector("#btn-unlock")?.addEventListener("click", handleUnlock);
   document.querySelector("#btn-unlock-bio")?.addEventListener("click", handleBiometricUnlock);
@@ -782,10 +526,7 @@ async function init() {
   }
 
   if (!popupState?.ok) {
-    showView("setup");
-    loadSetupFormValues(normalizeSettings({}));
-    applyMigrationSetupUi();
-    document.querySelector("#cas-email")?.focus();
+    showWelcome();
     return;
   }
 
@@ -793,7 +534,6 @@ async function init() {
   settingsCorrupt = popupState.settingsCorrupt === true;
   currentLockMode = popupState.lockMode ?? null;
   biometricInfo = popupState.biometric ?? null;
-  applyMigrationSetupUi();
 
   if (settingsCorrupt) {
     showUnlockWithMessage("", false);
@@ -801,15 +541,7 @@ async function init() {
   }
 
   if (!popupState.configured || migrationPending) {
-    showView("setup");
-    loadSetupFormValues(normalizeSettings({}));
-    if (migrationPending) {
-      document.querySelector("#lock-same-as-login").checked =
-        popupState.suggestSameAsLoginLock === true;
-      syncLockModeVisibility("lock");
-    } else {
-      document.querySelector("#cas-email")?.focus();
-    }
+    showWelcome();
     return;
   }
 

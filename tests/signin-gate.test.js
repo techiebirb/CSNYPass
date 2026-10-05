@@ -1,6 +1,6 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
-import { resetBrowser, local, runtime, windows } from "./fakes/browser.js";
+import { resetBrowser, local, runtime, tabs, windows } from "./fakes/browser.js";
 import { installFakeIndexedDb, resetFakeIndexedDb } from "./fakes/indexeddb.js";
 
 installFakeIndexedDb();
@@ -182,7 +182,7 @@ test("pause: login pages are told automation is off while paused, and again afte
   assert.equal(over.settings.enabled, true);
 });
 
-test("toolbar badge: LOCK once an 'every sign-in' unlock is spent, cleared by the next unlock", async () => {
+test("toolbar badge: no LOCK indicator after an 'every sign-in' unlock is spent", async () => {
   const { action } = await import("./fakes/browser.js");
   const enrollment = await enrollBiometric("attempt");
   const unlockPage = { url: "chrome-extension://test/popup/unlock.html" };
@@ -191,9 +191,6 @@ test("toolbar badge: LOCK once an 'every sign-in' unlock is spent, cleared by th
   assert.equal(action.badge, "");
 
   await send("FLOW_DONE", SENDERS.onelogin);
-  assert.equal(action.badge, "LOCK");
-
-  await send("UNLOCK_BIOMETRIC", unlockPage, { prfOutput: enrollment.prfOutput, forSignIn: true });
   assert.equal(action.badge, "");
 });
 
@@ -226,4 +223,16 @@ test("same-as-login lock: a save with the OneLogin password blanked is refused",
     POPUP
   );
   assert.equal(kept.ok, true);
+});
+
+test("first install opens the welcome tab; updates do not", async () => {
+  await runtime.installedListener({ reason: "install" });
+  assert.deepEqual(
+    tabs.created.map((t) => t.url),
+    ["chrome-extension://test/popup/welcome.html"]
+  );
+
+  tabs.created = [];
+  await runtime.installedListener({ reason: "update" });
+  assert.equal(tabs.created.length, 0);
 });

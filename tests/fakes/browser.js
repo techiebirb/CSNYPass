@@ -49,7 +49,13 @@ export const runtime = {
       runtime.listener = fn;
     },
   },
-  onInstalled: noopEvent,
+  /** The last registered onInstalled listener; tests call it like the browser would. */
+  installedListener: null,
+  onInstalled: {
+    addListener(fn) {
+      runtime.installedListener = fn;
+    },
+  },
   async openOptionsPage() {},
 };
 
@@ -74,11 +80,23 @@ export const action = {
   async setBadgeBackgroundColor() {},
 };
 
+export const tabs = {
+  created: [],
+  async create(options) {
+    const tab = { id: this.created.length + 1, ...options };
+    this.created.push(tab);
+    return tab;
+  },
+  query: async () => [],
+  sendMessage: async () => {},
+};
+
 export function resetBrowser() {
   local._reset();
   session._reset();
   alarms.created = [];
   windows.created = [];
+  tabs.created = [];
   action.badge = "";
 }
 
@@ -87,7 +105,7 @@ const browser = {
   alarms,
   runtime,
   windows,
-  tabs: { query: async () => [], sendMessage: async () => {} },
+  tabs,
   contextMenus: {
     removeAll: async () => {},
     create() {},

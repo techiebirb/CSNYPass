@@ -34,6 +34,12 @@ const builds = [
     platform: "browser",
   },
   {
+    entryPoints: ["extension/popup/welcome.js"],
+    outfile: "dist/welcome.js",
+    format: "iife",
+    platform: "browser",
+  },
+  {
     entryPoints: ["extension/popup/unlock.js"],
     outfile: "dist/unlock.js",
     format: "iife",

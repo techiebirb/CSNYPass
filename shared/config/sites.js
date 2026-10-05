@@ -4,6 +4,9 @@
  */
 import { CollegiateDom } from "../lib/dom.js";
 
+/** Where the welcome page sends people to try their first sign-in. */
+export const BLACKBAUD_SIGN_IN_URL = "https://collegiateschool.myschoolapp.com/app";
+
 export function findLabeledButton(labelRe) {
   for (const el of document.querySelectorAll(
     'button, input[type="submit"], input[type="button"]'

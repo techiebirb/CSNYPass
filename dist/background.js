@@ -1911,15 +1911,12 @@
       } else if (await isBiometricLocked()) {
         const profile = await loadProfile();
         if (profile?.enabled === false) text = "OFF";
-        else if (!profile || profile.hasPassword) text = "LOCK";
       } else {
         const result = await loadDecryptedSettingsResult();
         if (result.ok && result.settings.enabled === false) text = "OFF";
       }
       await import_webextension_polyfill6.default.action?.setBadgeText?.({ text });
-      await import_webextension_polyfill6.default.action?.setBadgeBackgroundColor?.({
-        color: text === "LOCK" ? "#b45309" : "#6b7280"
-      });
+      await import_webextension_polyfill6.default.action?.setBadgeBackgroundColor?.({ color: "#6b7280" });
     } catch {
     }
   }
@@ -2277,8 +2274,12 @@
     ).then(syncPauseMenu).catch(() => {
     });
   }
-  import_webextension_polyfill6.default.runtime.onInstalled.addListener(() => {
+  import_webextension_polyfill6.default.runtime.onInstalled.addListener((details) => {
     registerSettingsContextMenu();
+    if (details?.reason === "install") {
+      import_webextension_polyfill6.default.tabs.create({ url: import_webextension_polyfill6.default.runtime.getURL("popup/welcome.html") }).catch(() => {
+      });
+    }
   });
   import_webextension_polyfill6.default.contextMenus.onClicked.addListener((info) => {
     if (info.menuItemId === CONTEXT_MENU_SETTINGS_ID) {
@@ -2291,17 +2292,6 @@
       setPaused(false).catch(() => {
       });
     }
-  });
-  import_webextension_polyfill6.default.action?.onClicked.addListener(async (tab) => {
-    try {
-      if (senderHost({ tab }) === PASSWORD_HOST && await isBiometricLocked()) {
-        await openUnlockWindow({ force: true });
-        return;
-      }
-    } catch {
-    }
-    import_webextension_polyfill6.default.runtime.openOptionsPage().catch(() => {
-    });
   });
   updateBadge();
   syncPauseMenu();

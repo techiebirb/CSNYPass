@@ -29,14 +29,13 @@ For iPhone, iPad, and Android, use the [userscript version](https://github.com/t
 
 1. Build the extension (see [CONTRIBUTING.md](CONTRIBUTING.md)). The repo includes a pre-built `dist/` so you can skip this if files are already present.
 2. **Chrome or Edge:** Open `chrome://extensions` or `edge://extensions` → enable **Developer mode** → **Load unpacked** → select the repository folder (the one containing `manifest.json`).
-3. Click the extension icon → enter your school **email**, optional **OneLogin password**, and pick a protection mode:
-   - **Full auto:** set a **settings password** (or choose **Use OneLogin password to unlock settings**).
-   - **Fingerprint / Face ID:** pick how long one unlock lasts, then confirm with your fingerprint or face when prompted.
-
-   Then **Save**. You should see **Settings saved.**
+3. A **welcome tab** opens on first install (or click the extension icon and choose **Set up CSNYPass**). It walks you through three short steps:
+   - **Login:** your school **email**, an optional **OneLogin password**, and whether to click Next / Continue for you.
+   - **Protection:** pick **Full auto** (set a **settings password**, or choose **Use my OneLogin password to unlock settings**) or **Touch ID / Face ID** (pick how long one unlock lasts, then confirm when prompted).
+   - **Done:** a summary, a few tips, and a shortcut to the sign-in page.
 4. Open a supported login URL in the same browser and confirm automation runs (or turn it off on the settings page after unlocking it).
 
-**Updating from an older version:** The first time you open the settings page after updating, you may be asked to **protect existing settings** with a settings password. Your saved email and password stay as they are; you only set the lock.
+**Updating from an older version:** The first time you open the extension after updating, you may be asked to **protect existing settings**; the welcome tab opens straight to that step. Your saved email and password stay as they are; you only set the lock.
 
 ## Daily use
 
@@ -45,7 +44,7 @@ For iPhone, iPad, and Android, use the [userscript version](https://github.com/t
 
 ### Toolbar badge, pausing, and retry limit
 
-- **Badge:** the toolbar icon shows **LOCK** when your saved OneLogin password is still locked (Fingerprint / Face ID mode) and **OFF** when automation is turned off or paused. Click the icon while on a OneLogin page that shows **LOCK** to reopen the unlock window right away; anywhere else it opens settings.
+- **Badge:** the toolbar icon shows **OFF** when automation is turned off or paused.
 - **Pause:** right-click a login page → **Pause auto sign-in for 1 hour** (and **Resume auto sign-in**). Pausing needs no unlock and ends on its own, or when the browser closes.
 - **Retry limit:** if OneLogin rejects the saved password, the extension submits at most twice in 5 minutes per tab, then stops so your account isn't locked out. Fix the saved password in settings and reload.
 - **Different account prefilled:** if the OneLogin username box already holds another email, the extension leaves it alone.

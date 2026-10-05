@@ -167,7 +167,7 @@ async function setPaused(paused) {
   await broadcastSettingsChanged();
 }
 
-// ---- Toolbar badge: LOCK = password still locked, OFF = automation not running ----
+// ---- Toolbar badge: OFF = automation not running ----
 
 async function updateBadge() {
   try {
@@ -177,15 +177,12 @@ async function updateBadge() {
     } else if (await isBiometricLocked()) {
       const profile = await loadProfile();
       if (profile?.enabled === false) text = "OFF";
-      else if (!profile || profile.hasPassword) text = "LOCK";
     } else {
       const result = await loadDecryptedSettingsResult();
       if (result.ok && result.settings.enabled === false) text = "OFF";
     }
     await browser.action?.setBadgeText?.({ text });
-    await browser.action?.setBadgeBackgroundColor?.({
-      color: text === "LOCK" ? "#b45309" : "#6b7280",
-    });
+    await browser.action?.setBadgeBackgroundColor?.({ color: "#6b7280" });
   } catch {
     /* the badge is cosmetic */
   }
@@ -635,8 +632,13 @@ function registerSettingsContextMenu() {
 
 // Menus persist across service-worker restarts, so register only on install/update.
 // A second concurrent removeAll()+create() would race and hit "duplicate id".
-browser.runtime.onInstalled.addListener(() => {
+browser.runtime.onInstalled.addListener((details) => {
   registerSettingsContextMenu();
+  if (details?.reason === "install") {
+    browser.tabs
+      .create({ url: browser.runtime.getURL("popup/welcome.html") })
+      .catch(() => {});
+  }
 });
 
 browser.contextMenus.onClicked.addListener((info) => {
@@ -647,20 +649,6 @@ browser.contextMenus.onClicked.addListener((info) => {
   } else if (info.menuItemId === CONTEXT_MENU_RESUME_ID) {
     setPaused(false).catch(() => {});
   }
-});
-
-// On a OneLogin page whose password is still locked, the toolbar button is the way back
-// to the unlock window (e.g. after dismissing it); everywhere else it opens settings.
-browser.action?.onClicked.addListener(async (tab) => {
-  try {
-    if (senderHost({ tab }) === PASSWORD_HOST && (await isBiometricLocked())) {
-      await openUnlockWindow({ force: true });
-      return;
-    }
-  } catch {
-    /* fall through to settings */
-  }
-  browser.runtime.openOptionsPage().catch(() => {});
 });
 
 updateBadge();
