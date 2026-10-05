@@ -59,6 +59,5 @@ Fill in and submit the sign-in steps of the Collegiate School Blackbaud portal a
 ## Assets to prepare by hand
 
 - At least 1 screenshot, 1280x800 (or 640x400): the settings page (setup view and unlocked editor). Blur or use a fake email.
-- Store icon 128x128: `icons/icon-128.png` (already in the package).
 - Optional small promo tile 440x280.
 - Do not use the Collegiate School logo or other school branding in any asset.

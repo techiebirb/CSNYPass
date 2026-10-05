@@ -1,7 +1,7 @@
 /**
  * Builds a Chrome Web Store / Edge Add-ons upload zip: release/csnypass-v<version>.zip.
- * Only what the extension loads at runtime goes in: no sources, tests, source maps or
- * icon variants. Requires the `zip` command (preinstalled on macOS and most Linux).
+ * Only what the extension loads at runtime goes in: no sources, tests or source maps.
+ * Requires the `zip` command (preinstalled on macOS and most Linux).
  */
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
@@ -25,7 +25,6 @@ const stage = path.join(releaseDir, "stage");
 const zipPath = path.join(releaseDir, `csnypass-v${manifest.version}.zip`);
 fs.rmSync(releaseDir, { recursive: true, force: true });
 fs.mkdirSync(path.join(stage, "dist"), { recursive: true });
-fs.mkdirSync(path.join(stage, "icons"), { recursive: true });
 
 const copy = (from, to = from) => {
   fs.cpSync(path.join(root, from), path.join(stage, to), { recursive: true });
@@ -34,7 +33,6 @@ const copy = (from, to = from) => {
 copy("manifest.json");
 copy("LICENSE");
 copy("popup");
-for (const size of [16, 48, 128]) copy(`icons/icon-${size}.png`);
 
 for (const file of fs.readdirSync(path.join(root, "dist")).filter((f) => f.endsWith(".js"))) {
   const code = fs

@@ -127,13 +127,6 @@ body {
   font-weight: 700;
 }
 
-.unlock-icon {
-  width: 1.35rem;
-  height: 1.35rem;
-  color: var(--brand);
-  flex-shrink: 0;
-}
-
 .welcome {
   margin: 0 0 0.75rem;
   color: var(--brand);

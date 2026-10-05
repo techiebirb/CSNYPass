@@ -1,14 +1,9 @@
 {
   "manifest_version": 3,
   "name": "CSNYPass",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Fills your Collegiate Blackbaud and CSNY OneLogin sign-in steps. Credentials are encrypted and stay on your device.",
   "minimum_chrome_version": "116",
-  "icons": {
-    "16": "icons/icon-16.png",
-    "48": "icons/icon-48.png",
-    "128": "icons/icon-128.png"
-  },
   "options_ui": {
     "page": "popup/popup.html",
     "open_in_tab": true

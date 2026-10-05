@@ -47,14 +47,6 @@ deno test -A --import-map=tests/import-map.json tests/
 
 The tests run the real background modules against in-memory fakes of `browser.storage`, IndexedDB and alarms (see [`tests/fakes/`](tests/fakes/)). They cover Full-auto storage and legacy migration, the settings-password lock and backoff, and biometric enrollment, locking, unlock policies and mode switching. They can't exercise a real Touch ID / Face ID prompt, so try that by hand in Chrome or Edge after changing [`shared/lib/webauthn.js`](shared/lib/webauthn.js).
 
-Regenerate icons if needed:
-
-```bash
-npm run icons          # all variants in icons/variants/ (Node + @resvg/resvg-js)
-npm run icons:default  # rasterize the default variant (lock-dot) to icons/
-npm run icons:py       # Python fallback
-```
-
 Do not hand-edit files in `dist/` except by rebuilding. Source maps (`dist/*.map`) are git-ignored and left out of the store zip.
 
 ## Release a new version
@@ -68,7 +60,7 @@ Do not hand-edit files in `dist/` except by rebuilding. Source maps (`dist/*.map
 
 ## Publish to the Chrome Web Store
 
-1. `npm run package` builds `dist/` and writes `release/csnypass-v<version>.zip` (runtime files only: no sources, tests, source maps or icon variants).
+1. `npm run package` builds `dist/` and writes `release/csnypass-v<version>.zip` (runtime files only: no sources, tests or source maps).
 2. Upload that zip in the [Developer Dashboard](https://chrome.google.com/webstore/devconsole). Use the text in [`docs/store-listing.md`](docs/store-listing.md) for the description, single-purpose statement, permission justifications and privacy answers, and link [`PRIVACY.md`](PRIVACY.md) as the privacy policy.
 3. Provide screenshots (1280x800) of the settings page; the listing doc says which ones.
 4. Every store update needs a higher `version` than the one currently published.
