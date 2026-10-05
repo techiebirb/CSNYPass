@@ -2,7 +2,7 @@
 
 > Unofficial. CSNYPass is an independent project and is not affiliated with, endorsed by, or sponsored by Collegiate School, Blackbaud, or OneLogin. Those names belong to their owners and are used only to describe which sign-in pages the extension works on.
 
-Desktop browser extension for **Chrome**, **Edge**, and **Firefox** that fills parts of the Collegiate login flow—**email** on the Blackbaud portal and, when configured, **CSNY OneLogin** username and password steps. You still enter your **Blackbaud password** yourself.
+Desktop browser extension for **Chrome** and **Edge** that fills parts of the Collegiate login flow—**email** on the Blackbaud portal and, when configured, **CSNY OneLogin** username and password steps. You still enter your **Blackbaud password** yourself.
 
 Settings live on the extension's **settings page** (click the toolbar icon), not on the login page. You choose how your saved login is protected:
 
@@ -29,13 +29,12 @@ For iPhone, iPad, and Android, use the [userscript version](https://github.com/t
 
 1. Build the extension (see [CONTRIBUTING.md](CONTRIBUTING.md)). The repo includes a pre-built `dist/` so you can skip this if files are already present.
 2. **Chrome or Edge:** Open `chrome://extensions` or `edge://extensions` → enable **Developer mode** → **Load unpacked** → select the repository folder (the one containing `manifest.json`).
-3. **Firefox:** Open `about:debugging` → **This Firefox** → **Load Temporary Add-on** → choose `manifest.json` in this folder.
-4. Click the extension icon → enter your school **email**, optional **OneLogin password**, and pick a protection mode:
+3. Click the extension icon → enter your school **email**, optional **OneLogin password**, and pick a protection mode:
    - **Full auto:** set a **settings password** (or choose **Use OneLogin password to unlock settings**).
    - **Fingerprint / Face ID:** pick how long one unlock lasts, then confirm with your fingerprint or face when prompted.
 
    Then **Save**. You should see **Settings saved.**
-5. Open a supported login URL in the same browser and confirm automation runs (or turn it off on the settings page after unlocking it).
+4. Open a supported login URL in the same browser and confirm automation runs (or turn it off on the settings page after unlocking it).
 
 **Updating from an older version:** The first time you open the settings page after updating, you may be asked to **protect existing settings** with a settings password. Your saved email and password stay as they are; you only set the lock.
 
@@ -75,7 +74,7 @@ Your email is not a secret, so the Blackbaud email step, the "Collegiate School"
 
 The extension only acts on real sign-in screens (the Blackbaud email form, the Blackbaud "Collegiate School" button, and the OneLogin username/password form). It never prompts while you browse the signed-in site, such as a class bulletin board. After updating from an older version, the "Collegiate School" button is still clicked automatically; the first sign-in asks once at the OneLogin password step so your email can be remembered for prompt-free email steps (until then, type your email on the Blackbaud page yourself).
 
-It uses WebAuthn with the PRF extension, which needs a recent Chrome or Edge (116+) and a device with a platform authenticator. If your browser or device can't do it, the option is hidden or setup tells you so, and nothing is changed. Firefox support varies.
+It uses WebAuthn with the PRF extension, which needs a recent Chrome or Edge (116+) and a device with a platform authenticator. If your browser or device can't do it, the option is hidden or setup tells you so, and nothing is changed.
 
 ## Privacy and encryption
 
