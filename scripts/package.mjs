@@ -33,6 +33,7 @@ const copy = (from, to = from) => {
 copy("manifest.json");
 copy("LICENSE");
 copy("popup");
+copy("icons");
 
 for (const file of fs.readdirSync(path.join(root, "dist")).filter((f) => f.endsWith(".js"))) {
   const code = fs

@@ -102,9 +102,9 @@
   color: var(--brand);
 }
 
-.wordmark svg {
-  width: 1.9rem;
+.wordmark img {
   height: 1.9rem;
+  width: 1.9rem;
 }
 
 /* ---- Progress ---- */
@@ -237,8 +237,8 @@
 .steps {
   position: relative;
   overflow: hidden;
-  padding: 0.4rem;
-  margin: 0 -0.4rem;
+  padding: 0.4rem 0.4rem 1.25rem;
+  margin: 0 -0.4rem -0.85rem;
 }
 
 .step[hidden] {
@@ -428,7 +428,7 @@
 }
 
 .btn-primary {
-  box-shadow: 0 6px 16px -6px rgba(0, 48, 107, 0.6);
+  box-shadow: 0 4px 10px -4px rgba(0, 48, 107, 0.5);
 }
 
 .btn-ghost {
@@ -501,6 +501,7 @@ input:focus {
 
 input[type="email"],
 input[type="password"],
+input[type="text"],
 input[type="number"],
 select {
   transition: border-color 0.2s, box-shadow 0.2s;

@@ -106,7 +106,7 @@ export async function createBiometricCredential() {
         rp: { name: RP_NAME },
         user: {
           id: crypto.getRandomValues(new Uint8Array(16)),
-          name: "collegiate-auto-sign-in",
+          name: RP_NAME,
           displayName: RP_NAME,
         },
         pubKeyCredParams: [

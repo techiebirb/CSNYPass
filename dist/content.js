@@ -1265,8 +1265,8 @@
   }
 
   // extension/content/automation.js
-  var SESSION_PREFIX = "collegiateAutoSignIn";
-  var ATTEMPTS_PREFIX = "collegiateAutoSignIn.attempts";
+  var SESSION_PREFIX = "csnyPass";
+  var ATTEMPTS_PREFIX = "csnyPass.attempts";
   var LOG_PREFIX = "[CSNYPass]";
   var currentSettings = null;
   var automationChain = Promise.resolve();

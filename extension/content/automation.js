@@ -11,9 +11,9 @@ import {
 } from "../../shared/lib/attempts.js";
 import { findLabeledButton, getSiteConfigForLocation } from "../../shared/config/sites.js";
 
-const SESSION_PREFIX = "collegiateAutoSignIn";
+const SESSION_PREFIX = "csnyPass";
 /** Not under SESSION_PREFIX/ on purpose: navigation must not reset the submit limit. */
-const ATTEMPTS_PREFIX = "collegiateAutoSignIn.attempts";
+const ATTEMPTS_PREFIX = "csnyPass.attempts";
 const LOG_PREFIX = "[CSNYPass]";
 
 let currentSettings = null;
