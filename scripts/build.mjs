@@ -11,6 +11,7 @@ const shared = {
   target: ["chrome109", "firefox109"],
   sourcemap: true,
   absWorkingDir: root,
+  preserveSymlinks: true,
   logLevel: "info",
 };
 

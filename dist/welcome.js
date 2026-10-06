@@ -25,9 +25,9 @@
     mod
   ));
 
-  // node_modules/.deno/webextension-polyfill@0.12.0/node_modules/webextension-polyfill/dist/browser-polyfill.js
+  // node_modules/webextension-polyfill/dist/browser-polyfill.js
   var require_browser_polyfill = __commonJS({
-    "node_modules/.deno/webextension-polyfill@0.12.0/node_modules/webextension-polyfill/dist/browser-polyfill.js"(exports, module) {
+    "node_modules/webextension-polyfill/dist/browser-polyfill.js"(exports, module) {
       (function(global, factory) {
         if (typeof define === "function" && define.amd) {
           define("webextension-polyfill", ["module"], factory);
