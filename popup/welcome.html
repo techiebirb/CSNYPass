@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Welcome to CSNYPass</title>
+    <link rel="stylesheet" href="base.css" />
+    <link rel="stylesheet" href="welcome.css" />
+  </head>
+  <body class="welcome-body">
+    <div class="blob blob-a" aria-hidden="true"></div>
+    <div class="blob blob-b" aria-hidden="true"></div>
+
+    <main class="wcard">
+      <header class="whead">
+        <div class="wordmark">
+          <img src="../icons/logo.svg" alt="" />
+          <span>CSNYPass</span>
+        </div>
+        <ol class="progress" id="progress" aria-label="Setup progress" hidden>
+          <li class="p-step">
+            <span class="p-dot">
+              <span class="p-num">1</span>
+              <svg class="p-check" viewBox="0 0 12 12" aria-hidden="true">
+                <path d="M2.5 6.5l2.5 2.5 4.5-5" />
+              </svg>
+            </span>
+            <span class="p-label">Login</span>
+          </li>
+          <li class="p-step">
+            <span class="p-dot">
+              <span class="p-num">2</span>
+              <svg class="p-check" viewBox="0 0 12 12" aria-hidden="true">
+                <path d="M2.5 6.5l2.5 2.5 4.5-5" />
+              </svg>
+            </span>
+            <span class="p-label">Protection</span>
+          </li>
+          <li class="p-step">
+            <span class="p-dot">
+              <span class="p-num">3</span>
+              <svg class="p-check" viewBox="0 0 12 12" aria-hidden="true">
+                <path d="M2.5 6.5l2.5 2.5 4.5-5" />
+              </svg>
+            </span>
+            <span class="p-label">Done</span>
+          </li>
+        </ol>
+      </header>
+
+      <div class="steps" id="steps">
+        <!-- Step: intro -->
+        <section class="step hero" data-step="intro">
+          <svg class="hero-art rise" style="--i: 0" viewBox="0 0 160 160" aria-hidden="true">
+            <circle cx="80" cy="80" r="70" fill="#e3ebf8" />
+            <circle cx="80" cy="80" r="52" fill="#fff" opacity="0.7" />
+            <g class="hero-key">
+              <g class="key-turn">
+                <circle cx="62" cy="80" r="22" fill="#00306b" />
+                <circle cx="62" cy="80" r="8.5" fill="#fff" />
+                <rect x="82" y="75.5" width="42" height="9" rx="4.5" fill="#00306b" />
+                <rect x="106" y="84" width="8" height="13" rx="3" fill="#f5a623" />
+                <rect x="93" y="84" width="8" height="9" rx="3" fill="#f5a623" />
+              </g>
+            </g>
+            <path
+              class="spark spark-a"
+              d="M132 34 L135 43 L144 46 L135 49 L132 58 L129 49 L120 46 L129 43 Z"
+              fill="#f5a623"
+            />
+            <path
+              class="spark spark-b"
+              d="M30 104 L32 110 L38 112 L32 114 L30 120 L28 114 L22 112 L28 110 Z"
+              fill="#6cb4ee"
+            />
+          </svg>
+          <h1 class="rise" style="--i: 1" tabindex="-1">Sign in to school in one click.</h1>
+          <p class="lead rise" style="--i: 2">
+            Set up CSNYPass once and it fills your sign-in steps for you.
+          </p>
+          <ul class="values">
+            <li class="rise" style="--i: 3">
+              <span class="v-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="3" y="5" width="18" height="14" rx="2.5" />
+                  <path d="M4 7l8 6 8-6" />
+                </svg>
+              </span>
+              <span><strong>Fills your Blackbaud email</strong><br />You type the password yourself.</span>
+            </li>
+            <li class="rise" style="--i: 4">
+              <span class="v-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="8" cy="12" r="4" />
+                  <path d="M12 12h9M18 12v3M15 12v2" />
+                </svg>
+              </span>
+              <span><strong>Signs you into OneLogin</strong><br />Username and saved password.</span>
+            </li>
+            <li class="rise" style="--i: 5">
+              <span class="v-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="5" y="11" width="14" height="9" rx="2.5" />
+                  <path d="M8 11V8a4 4 0 018 0v3" />
+                </svg>
+              </span>
+              <span><strong>Encrypted on this device</strong><br />Nothing is sent anywhere.</span>
+            </li>
+          </ul>
+          <div class="actions actions-center rise" style="--i: 6">
+            <button type="button" class="btn btn-primary btn-lg btn-cta" id="btn-start" data-autofocus>
+              Let&rsquo;s set it up
+              <svg class="arrow" viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M3 8h10M9 4l4 4-4 4" />
+              </svg>
+            </button>
+          </div>
+          <details class="site-details how-it-works rise" style="--i: 7">
+            <summary>How it works</summary>
+            <p class="hint">
+              Works on Blackbaud: <code>collegiateschool.myschoolapp.com</code><br />
+              and OneLogin: <code>csny.onelogin.com/login</code> or <code>/login2</code>
+            </p>
+          </details>
+        </section>
+
+        <!-- Step: login -->
+        <form class="step" data-step="login" id="form-login" hidden novalidate>
+          <h1 tabindex="-1">Your school login</h1>
+          <p class="lead">We&rsquo;ll fill this in on the sign-in pages.</p>
+
+          <label class="field" for="cas-email">School email</label>
+          <div class="email-wrap">
+            <input
+              type="email"
+              id="cas-email"
+              autocomplete="email"
+              inputmode="email"
+              data-autofocus
+            />
+            <svg class="valid-check" viewBox="0 0 16 16" aria-hidden="true">
+              <circle cx="8" cy="8" r="8" />
+              <path d="M4.5 8.3l2.3 2.3 4.7-5" />
+            </svg>
+          </div>
+          <p class="field-error" id="email-error" role="alert"></p>
+
+          <label class="field" for="cas-password">
+            OneLogin password <span class="optional">optional</span>
+          </label>
+          <div class="password-wrap">
+            <input type="password" id="cas-password" autocomplete="current-password" />
+            <button
+              type="button"
+              class="toggle-pw"
+              data-target="cas-password"
+              aria-label="Show password"
+            >
+              Show
+            </button>
+          </div>
+          <p class="hint field-hint">
+            Skip it if you only use the Blackbaud email step. You can add it later.
+          </p>
+
+          <label class="switch-row">
+            <span class="switch-label">Automatically click Next / Continue</span>
+            <span class="switch">
+              <input type="checkbox" id="cas-autoClickNext" checked />
+              <span class="switch-slider" aria-hidden="true"></span>
+            </span>
+          </label>
+
+          <details class="section-advanced" id="login-advanced">
+            <summary>Advanced</summary>
+            <label class="field" for="cas-clickDelaySlider"
+              >Wait before clicking Next / Continue</label
+            >
+            <p class="hint delay-live"><span id="cas-clickDelayLabel">0.3 s</span></p>
+            <input
+              type="range"
+              id="cas-clickDelaySlider"
+              min="0"
+              max="5000"
+              step="50"
+              value="300"
+            />
+            <label class="field field-inline" for="cas-clickDelayMs">Milliseconds</label>
+            <input
+              type="number"
+              id="cas-clickDelayMs"
+              min="0"
+              max="5000"
+              step="50"
+              value="300"
+            />
+            <p class="hint">Increase if Next stays gray (try 0.5&ndash;1 s).</p>
+          </details>
+
+          <div class="actions">
+            <button type="button" class="btn btn-ghost btn-lg" data-back>Back</button>
+            <button type="submit" class="btn btn-primary btn-lg">Continue</button>
+          </div>
+        </form>
+
+        <!-- Step: protect -->
+        <form class="step" data-step="protect" id="form-protect" hidden novalidate>
+          <h1 id="protect-title" tabindex="-1">Keep it protected</h1>
+          <p class="lead" id="protect-lead">
+            Choose how CSNYPass guards your saved login on this device.
+          </p>
+          <p class="hint migration-banner" id="migration-banner" hidden>
+            Your login details are already saved on this device. Choose how to protect the
+            settings screen. You do not need to re-enter your email or OneLogin password.
+          </p>
+
+          <div class="mode-group" role="radiogroup" aria-label="Sign-in mode">
+            <label class="mode-option choice-card">
+              <input type="radio" name="lock-mode" id="lock-mode-auto" value="auto" checked />
+              <span class="choice-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M13 3L5 14h6l-1 7 8-11h-6z" />
+                </svg>
+              </span>
+              <span class="choice-body">
+                <strong>Full auto</strong>
+                <span class="mode-desc"
+                  >Signs in with no prompt. Opening these settings needs a password. Slightly
+                  less secure, since your login is unlocked without verifying it&rsquo;s you.</span
+                >
+              </span>
+              <span class="choice-check" aria-hidden="true">
+                <svg viewBox="0 0 12 12"><path d="M2.5 6.5l2.5 2.5 4.5-5" /></svg>
+              </span>
+            </label>
+            <label class="mode-option choice-card" id="lock-mode-bio-option">
+              <input type="radio" name="lock-mode" id="lock-mode-bio" value="biometric" />
+              <span class="choice-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4" />
+                  <path d="M14 13.12c0 2.38 0 6.38-1 8.88" />
+                  <path d="M17.29 21.02c.12-.6.43-2.3.5-3.02" />
+                  <path d="M2 12a10 10 0 0 1 18-6" />
+                  <path d="M2 16h.01" />
+                  <path d="M21.8 16c.2-2 .131-5.354 0-6" />
+                  <path d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2" />
+                  <path d="M8.65 22c.21-.66.45-1.32.57-2" />
+                  <path d="M9 6.8a6 6 0 0 1 9 5.2v2" />
+                </svg>
+              </span>
+              <span class="choice-body">
+                <strong>Touch ID / Face ID <em>(recommended)</em></strong>
+                <span class="mode-desc"
+                  >Your login stays locked until you use your fingerprint or face, to sign in
+                  and to open settings.</span
+                >
+              </span>
+              <span class="choice-check" aria-hidden="true">
+                <svg viewBox="0 0 12 12"><path d="M2.5 6.5l2.5 2.5 4.5-5" /></svg>
+              </span>
+            </label>
+          </div>
+          <p class="hint" id="lock-bio-unsupported" hidden>
+            Touch ID / Face ID isn&rsquo;t available in this browser or on this device.
+          </p>
+
+          <div id="lock-auto-fields" class="reveal">
+            <label class="switch-row">
+              <span class="switch-label">Use my OneLogin password to unlock settings</span>
+              <span class="switch">
+                <input type="checkbox" id="lock-same-as-login" />
+                <span class="switch-slider" aria-hidden="true"></span>
+              </span>
+            </label>
+            <div id="lock-custom-fields" class="reveal">
+              <label class="field" for="lock-password">Settings password</label>
+              <div class="password-wrap">
+                <input type="password" id="lock-password" autocomplete="new-password" />
+                <button
+                  type="button"
+                  class="toggle-pw"
+                  data-target="lock-password"
+                  aria-label="Show password"
+                >
+                  Show
+                </button>
+              </div>
+              <label class="field" for="lock-password-confirm">Confirm settings password</label>
+              <div class="password-wrap">
+                <input type="password" id="lock-password-confirm" autocomplete="new-password" />
+                <button
+                  type="button"
+                  class="toggle-pw"
+                  data-target="lock-password-confirm"
+                  aria-label="Show password"
+                >
+                  Show
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div id="lock-bio-fields" class="reveal" hidden>
+            <label class="field" for="lock-policy">How long one unlock lasts</label>
+            <select id="lock-policy">
+              <option value="attempt">Every sign-in (ask each time)</option>
+              <option value="session" selected>Until I close the browser</option>
+              <option value="minutes">A set number of minutes</option>
+            </select>
+            <div id="lock-minutes-wrap" class="reveal" hidden>
+              <label class="field field-inline" for="lock-minutes">Minutes</label>
+              <input type="number" id="lock-minutes" min="1" max="1440" step="1" value="30" />
+            </div>
+            <p class="hint field-hint">
+              If you lose this device or change its biometrics, saved data can&rsquo;t be
+              recovered. You would have to clear it and start over.
+            </p>
+          </div>
+
+          <p class="status" id="protect-status" role="status"></p>
+
+          <div class="actions">
+            <button type="button" class="btn btn-ghost btn-lg" id="btn-protect-back" data-back>
+              Back
+            </button>
+            <button type="submit" class="btn btn-primary btn-lg" id="btn-finish">
+              <span class="btn-label">Finish setup</span>
+              <span class="spinner" aria-hidden="true"></span>
+            </button>
+          </div>
+        </form>
+
+        <!-- Step: done -->
+        <section class="step done" data-step="done" hidden>
+          <div class="done-art">
+            <svg class="done-check" viewBox="0 0 96 96" aria-hidden="true">
+              <circle cx="48" cy="48" r="44" fill="#e6f4ec" />
+              <circle
+                class="dc-ring"
+                cx="48"
+                cy="48"
+                r="40"
+                fill="none"
+                stroke="#0a6b32"
+                stroke-width="5"
+                stroke-linecap="round"
+                transform="rotate(-90 48 48)"
+              />
+              <path
+                class="dc-tick"
+                d="M29 50 L43 64 L68 35"
+                fill="none"
+                stroke="#0a6b32"
+                stroke-width="6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <div class="confetti" id="confetti" aria-hidden="true"></div>
+          </div>
+          <h1 id="done-title" class="rise" style="--i: 0" tabindex="-1">You&rsquo;re all set!</h1>
+          <p class="lead rise" style="--i: 1" id="done-lead">
+            CSNYPass will fill your sign-in steps from now on.
+          </p>
+          <p class="rise" style="--i: 2"><span class="summary-chip" id="done-chip"></span></p>
+          <ul class="tips">
+            <li class="rise" style="--i: 3">
+              <strong>Pin it.</strong> Click the puzzle icon in your toolbar, then the pin next to
+              CSNYPass.
+            </li>
+            <li class="rise" style="--i: 4">
+              <strong>Need a break?</strong> Right-click a sign-in page to pause for an hour.
+            </li>
+            <li class="rise" style="--i: 5">
+              <strong>Change anything later</strong> from the toolbar icon.
+            </li>
+          </ul>
+          <div class="actions actions-center rise" style="--i: 6">
+            <button type="button" class="btn btn-ghost btn-lg" id="btn-open-settings">
+              Open settings
+            </button>
+            <a
+              class="btn btn-primary btn-lg"
+              id="btn-open-signin"
+              target="_blank"
+              rel="noopener noreferrer"
+              href="#"
+              >Go to sign-in</a
+            >
+          </div>
+        </section>
+
+        <!-- Step: note (settings could not be read) -->
+        <section class="step" data-step="note" hidden>
+          <h1 tabindex="-1">Saved settings couldn&rsquo;t be read</h1>
+          <p class="lead">
+            Login automation may not work until you clear the saved data and set up again. You can
+            do that from the settings page.
+          </p>
+          <div class="actions actions-center">
+            <button type="button" class="btn btn-primary btn-lg" id="btn-note-settings">
+              Open settings
+            </button>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <p class="sr-only" id="step-announce" role="status" aria-live="polite"></p>
+    <script src="../dist/welcome.js"></script>
+  </body>
+</html>

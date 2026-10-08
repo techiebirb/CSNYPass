@@ -1,0 +1,28 @@
+{
+  "name": "csnypass",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Fills your Collegiate Blackbaud and CSNY OneLogin sign-in steps. Credentials are encrypted and stay on your device.",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/techiebirb/CSNYPass.git"
+  },
+  "bugs": {
+    "url": "https://github.com/techiebirb/CSNYPass/issues"
+  },
+  "homepage": "https://github.com/techiebirb/CSNYPass#readme",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "package": "node scripts/package.mjs",
+    "test": "deno test -A --import-map=tests/import-map.json tests/",
+    "watch": "node scripts/build.mjs --watch"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0"
+  },
+  "dependencies": {
+    "webextension-polyfill": "^0.12.0"
+  }
+}

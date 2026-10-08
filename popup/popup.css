@@ -1,0 +1,71 @@
+html {
+  margin: 0 auto;
+  min-width: var(--popup-width);
+  width: var(--popup-width);
+}
+
+body {
+  min-width: var(--popup-width);
+  width: var(--popup-width);
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-height: 32rem;
+}
+
+/* Setup card shown in the popup until the welcome tab has been completed. */
+.welcome-card {
+  text-align: center;
+  padding: 1.25rem 1rem 0.5rem;
+}
+
+.welcome-card .hero-key {
+  width: 4.5rem;
+  height: 4.5rem;
+  animation: card-float 3s ease-in-out infinite;
+}
+
+.welcome-card h1 {
+  margin: 0.5rem 0 0.25rem;
+  font-size: 1.15rem;
+}
+
+.stagger {
+  opacity: 0;
+  animation: card-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: calc(var(--i, 0) * 70ms);
+}
+
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes card-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-4deg);
+  }
+  50% {
+    transform: translateY(-5px) rotate(4deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome-card .hero-key {
+    animation: none;
+  }
+  .stagger {
+    animation: none;
+    opacity: 1;
+  }
+}
