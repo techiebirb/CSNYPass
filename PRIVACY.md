@@ -27,4 +27,4 @@ You can edit your saved details at any time on the settings page, or erase every
 
 ## Changes and contact
 
-If this policy changes, the new version will be published in this repository with an updated date. Questions or concerns: open an issue at <https://github.com/techiebirb/CSNYPass/issues>.
+If this policy changes, the new version will be published in this repository with an updated date. Use of CSNYPass is also covered by the [terms of service](TERMS.md). Questions or concerns: open an issue at <https://github.com/techiebirb/CSNYPass/issues>.

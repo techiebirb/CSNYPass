@@ -21,6 +21,7 @@
 .welcome-body {
   min-height: 100vh;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 2rem 1rem;
@@ -68,6 +69,22 @@
 }
 
 /* ---- Card ---- */
+.legal {
+  position: relative;
+  z-index: 1;
+  margin: 0.75rem 0 0;
+  font-size: 0.7rem;
+}
+
+.legal a {
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.legal a:hover {
+  text-decoration: underline;
+}
+
 .wcard {
   position: relative;
   z-index: 1;

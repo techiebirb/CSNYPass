@@ -143,7 +143,7 @@ Here's how each mode protects your data, including what it doesn't protect again
 
 **Forgot your password, or lost access to your biometric?** There is no recovery, because the data can't be decrypted without it. Use **Clear all saved data and start over** in the Help section of the settings page, then set up again. You don't need to remove the extension.
 
-See [PRIVACY.md](PRIVACY.md) for the full privacy policy.
+See [PRIVACY.md](PRIVACY.md) for the full privacy policy and [TERMS.md](TERMS.md) for the terms of service.
 
 ## Troubleshooting
 

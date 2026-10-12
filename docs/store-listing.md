@@ -6,6 +6,7 @@ Copy for the Developer Dashboard. Keep it in sync with `PRIVACY.md` and `manifes
 **Category:** Productivity
 **Language:** English
 **Privacy policy URL:** https://github.com/techiebirb/CSNYPass/blob/main/PRIVACY.md
+**Terms of service:** https://github.com/techiebirb/CSNYPass/blob/main/TERMS.md
 **Support / homepage URL:** https://github.com/techiebirb/CSNYPass
 
 ## Summary (max 132 characters)

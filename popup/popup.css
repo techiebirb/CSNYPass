@@ -16,6 +16,22 @@ body {
   max-height: 32rem;
 }
 
+.legal {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.legal:hover {
+  text-decoration: underline;
+}
+
+.legal-center {
+  flex: 1 1 100%;
+  text-align: center;
+}
+
 /* Setup card shown in the popup until the welcome tab has been completed. */
 .welcome-card {
   text-align: center;
