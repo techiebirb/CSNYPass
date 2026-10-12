@@ -7,7 +7,7 @@
 Your saved login is encrypted and stays on your device. You choose how it's protected:
 
 - **Full auto:** signs you in automatically, with no prompt. Opening settings needs a password.
-- **Touch ID / Face ID:** your saved OneLogin password stays locked until you use Touch ID, Face ID or Windows Hello. The email steps run without a prompt, and you're asked only at the OneLogin password step and when you open settings. After you unlock, sign-in is automatic for as long as you chose.
+- **Touch ID / Face ID:** your saved OneLogin password stays locked until you use Touch ID, Face ID or Windows Hello. The email steps run without a prompt, and you're asked only at the OneLogin password step and when you open settings. The prompt waits until you switch to the sign-in tab, so it never pops up over something else. After you unlock, sign-in is automatic for as long as you chose. Full auto is unaffected.
 
 It works in desktop **Chrome** and **Edge** (version 116 or newer). For iPhone, iPad and Android, use the [userscript version](https://github.com/techiebirb/CSNY-Auto-Sign-in-Userscript) instead.
 

@@ -2183,9 +2183,18 @@
     const settings = senderHost(sender) === PASSWORD_HOST ? result.settings : { ...result.settings, password: "" };
     return { ok: true, settings, passwordLocked: false };
   }
+  async function isSenderTabFocused(sender) {
+    try {
+      if (sender.tab?.active !== true) return false;
+      return (await import_webextension_polyfill6.default.windows.get(sender.tab.windowId)).focused === true;
+    } catch {
+      return false;
+    }
+  }
   async function handleRequestSignInUnlock(sender) {
     if (!await isBiometricLocked()) return { ok: true, alreadyUnlocked: true };
     if (senderHost(sender) !== PASSWORD_HOST) return { ok: false, error: "Forbidden." };
+    if (!await isSenderTabFocused(sender)) return { ok: false, notFocused: true };
     await openUnlockWindow();
     return { ok: true };
   }

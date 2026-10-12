@@ -49,5 +49,7 @@ async function unlock({ automatic = false } = {}) {
 }
 
 button.addEventListener("click", () => unlock());
-// Try right away; if the browser wants a click first, the button is still there.
-unlock({ automatic: true });
+// Try right away; if the browser wants a click first, the button is still there. A window
+// that opened without focus waits for it, since the browser would refuse the prompt.
+if (document.hasFocus()) unlock({ automatic: true });
+else window.addEventListener("focus", () => unlock({ automatic: true }), { once: true });

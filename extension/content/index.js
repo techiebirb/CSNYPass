@@ -6,12 +6,12 @@ import {
   notifyNavigationCompleted,
   setAutomationSettings,
   resetUnlockRequest,
+  requestSignInUnlock,
 } from "./automation.js";
 
 let settingsCache = normalizeSettings({});
 /** True when the background has no public profile yet; stops pointless polling. */
 let awaitingProfile = false;
-let unlockRequested = false;
 
 /** Only called on a real sign-in page (see runAutomation), never on page load. */
 async function fetchSettingsFromBackground() {
@@ -24,11 +24,9 @@ async function fetchSettingsFromBackground() {
       // profile. Blackbaud pages never ask.
       if (
         response.needsProfile &&
-        !unlockRequested &&
         window.location.hostname === "csny.onelogin.com"
       ) {
-        unlockRequested = true;
-        browser.runtime.sendMessage({ type: "REQUEST_SIGN_IN_UNLOCK" }).catch(() => {});
+        requestSignInUnlock(() => awaitingProfile);
       }
       return settingsCache;
     }

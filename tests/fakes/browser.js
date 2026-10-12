@@ -29,6 +29,10 @@ const noopEvent = { addListener() {} };
 
 export const windows = {
   created: [],
+  focusedIds: new Set([1]),
+  async get(id) {
+    return { id, focused: this.focusedIds.has(id) };
+  },
   async create(options) {
     const win = { id: this.created.length + 1, ...options };
     this.created.push(win);
@@ -96,6 +100,7 @@ export function resetBrowser() {
   session._reset();
   alarms.created = [];
   windows.created = [];
+  windows.focusedIds = new Set([1]);
   tabs.created = [];
   action.badge = "";
 }

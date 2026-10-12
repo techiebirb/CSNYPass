@@ -1146,6 +1146,7 @@
     }
   }
   button.addEventListener("click", () => unlock());
-  unlock({ automatic: true });
+  if (document.hasFocus()) unlock({ automatic: true });
+  else window.addEventListener("focus", () => unlock({ automatic: true }), { once: true });
 })();
 //# sourceMappingURL=unlock.js.map

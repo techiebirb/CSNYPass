@@ -16,7 +16,7 @@ const SECRET = "s3cret-pass";
 const SENDERS = {
   school: { tab: { url: "https://collegiateschool.myschoolapp.com/app/student" } },
   signin: { tab: { url: "https://app.blackbaud.com/signin" } },
-  onelogin: { tab: { url: "https://csny.onelogin.com/login2" } },
+  onelogin: { tab: { active: true, windowId: 1, url: "https://csny.onelogin.com/login2" } },
 };
 
 function send(type, sender, extra = {}) {
@@ -235,4 +235,32 @@ test("first install opens the welcome tab; updates do not", async () => {
   tabs.created = [];
   await runtime.installedListener({ reason: "update" });
   assert.equal(tabs.created.length, 0);
+});
+
+test("biometric prompt waits for an active tab in a focused window", async () => {
+  await enrollBiometric();
+  const background = { tab: { ...SENDERS.onelogin.tab, active: false } };
+  assert.deepEqual(await send("REQUEST_SIGN_IN_UNLOCK", background), {
+    ok: false,
+    notFocused: true,
+  });
+  assert.equal(windows.created.length, 0);
+
+  windows.focusedIds.clear();
+  assert.deepEqual(await send("REQUEST_SIGN_IN_UNLOCK", SENDERS.onelogin), {
+    ok: false,
+    notFocused: true,
+  });
+  assert.equal(windows.created.length, 0);
+
+  windows.focusedIds.add(1);
+  assert.equal((await send("REQUEST_SIGN_IN_UNLOCK", SENDERS.onelogin)).ok, true);
+  assert.equal(windows.created.length, 1);
+});
+
+test("Full auto never waits for focus", async () => {
+  await storage.saveEncryptedSettings(SETTINGS);
+  windows.focusedIds.clear();
+  const background = { tab: { ...SENDERS.onelogin.tab, active: false } };
+  assert.equal((await send("REQUEST_SIGN_IN_UNLOCK", background)).alreadyUnlocked, true);
 });

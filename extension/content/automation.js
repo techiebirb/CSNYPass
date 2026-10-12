@@ -28,10 +28,69 @@ let refreshSettingsFn = null;
  * sessionStorage it survived both, so a later sign-in in the same tab never prompted.
  */
 let unlockRequested = false;
+/** A requestSignInUnlock call is already waiting for focus; repeat calls must not stack. */
+let unlockPending = false;
 
 /** The unlock is gone (time limit or sign-in done): the next password step may ask again. */
 export function resetUnlockRequest() {
   unlockRequested = false;
+  unlockPending = false;
+}
+
+function isUserLooking() {
+  return document.visibilityState === "visible" && document.hasFocus();
+}
+
+/** Resolves once this tab is visible and its window has focus (or after `fallbackMs`, if given). */
+function waitForUserFocus({ fallbackMs = 0 } = {}) {
+  return new Promise((resolve) => {
+    if (!fallbackMs && isUserLooking()) {
+      resolve();
+      return;
+    }
+    let timer;
+    const done = () => {
+      window.removeEventListener("focus", onChange);
+      document.removeEventListener("visibilitychange", onChange);
+      clearTimeout(timer);
+      resolve();
+    };
+    const onChange = () => {
+      if (isUserLooking()) done();
+    };
+    window.addEventListener("focus", onChange);
+    document.addEventListener("visibilitychange", onChange);
+    if (fallbackMs) timer = setTimeout(done, fallbackMs);
+  });
+}
+
+/**
+ * Asks the background for the Touch ID / Face ID window, but only while the user is looking
+ * at this tab. `stillNeeded` is re-checked after waiting: the page may have moved on.
+ */
+export async function requestSignInUnlock(stillNeeded) {
+  if (unlockRequested || unlockPending) return;
+  unlockPending = true;
+  try {
+    let retry = false;
+    for (;;) {
+      await waitForUserFocus({ fallbackMs: retry ? 500 : 0 });
+      if (!stillNeeded()) return;
+      unlockRequested = true;
+      let response;
+      try {
+        response = await browser.runtime.sendMessage({ type: "REQUEST_SIGN_IN_UNLOCK" });
+      } catch {
+        return;
+      }
+      if (!response?.notFocused) return;
+      // Background disagrees about focus: ask again later instead of spinning.
+      unlockRequested = false;
+      retry = true;
+    }
+  } finally {
+    unlockPending = false;
+  }
 }
 
 function stepGuardKey(siteId, step) {
@@ -314,13 +373,17 @@ async function runOneLoginUsernameStep(settings, site) {
 
 /** Touch ID / Face ID is asked for only here: the password box is on screen and still locked. */
 async function requestPasswordUnlock(site) {
-  if (unlockRequested) return;
+  if (unlockRequested || unlockPending) return;
   const onPassword = await CollegiateDom.waitFor(() =>
     site.getStep() === "password" ? true : null
   );
   if (!onPassword) return;
-  unlockRequested = true;
-  browser.runtime.sendMessage({ type: "REQUEST_SIGN_IN_UNLOCK" }).catch(() => {});
+  await requestSignInUnlock(
+    () =>
+      site.getStep() === "password" &&
+      currentSettings?.passwordLocked === true &&
+      !currentSettings?.password?.trim()
+  );
 }
 
 async function runOneLoginPasswordStep(settings, site) {

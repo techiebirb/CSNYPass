@@ -1275,8 +1275,57 @@
   var lastAutomationHref = "";
   var refreshSettingsFn = null;
   var unlockRequested = false;
+  var unlockPending = false;
   function resetUnlockRequest() {
     unlockRequested = false;
+    unlockPending = false;
+  }
+  function isUserLooking() {
+    return document.visibilityState === "visible" && document.hasFocus();
+  }
+  function waitForUserFocus({ fallbackMs = 0 } = {}) {
+    return new Promise((resolve) => {
+      if (!fallbackMs && isUserLooking()) {
+        resolve();
+        return;
+      }
+      let timer;
+      const done = () => {
+        window.removeEventListener("focus", onChange);
+        document.removeEventListener("visibilitychange", onChange);
+        clearTimeout(timer);
+        resolve();
+      };
+      const onChange = () => {
+        if (isUserLooking()) done();
+      };
+      window.addEventListener("focus", onChange);
+      document.addEventListener("visibilitychange", onChange);
+      if (fallbackMs) timer = setTimeout(done, fallbackMs);
+    });
+  }
+  async function requestSignInUnlock(stillNeeded) {
+    if (unlockRequested || unlockPending) return;
+    unlockPending = true;
+    try {
+      let retry = false;
+      for (; ; ) {
+        await waitForUserFocus({ fallbackMs: retry ? 500 : 0 });
+        if (!stillNeeded()) return;
+        unlockRequested = true;
+        let response;
+        try {
+          response = await import_webextension_polyfill.default.runtime.sendMessage({ type: "REQUEST_SIGN_IN_UNLOCK" });
+        } catch {
+          return;
+        }
+        if (!response?.notFocused) return;
+        unlockRequested = false;
+        retry = true;
+      }
+    } finally {
+      unlockPending = false;
+    }
   }
   function stepGuardKey(siteId, step) {
     return `${SESSION_PREFIX}/${siteId}/${step}`;
@@ -1503,14 +1552,14 @@
     return false;
   }
   async function requestPasswordUnlock(site) {
-    if (unlockRequested) return;
+    if (unlockRequested || unlockPending) return;
     const onPassword = await CollegiateDom.waitFor(
       () => site.getStep() === "password" ? true : null
     );
     if (!onPassword) return;
-    unlockRequested = true;
-    import_webextension_polyfill.default.runtime.sendMessage({ type: "REQUEST_SIGN_IN_UNLOCK" }).catch(() => {
-    });
+    await requestSignInUnlock(
+      () => site.getStep() === "password" && currentSettings?.passwordLocked === true && !currentSettings?.password?.trim()
+    );
   }
   async function runOneLoginPasswordStep(settings, site) {
     if (shouldSkipOneLoginPasswordStep(site)) return true;
@@ -1675,17 +1724,14 @@
   // extension/content/index.js
   var settingsCache = normalizeSettings({});
   var awaitingProfile = false;
-  var unlockRequested2 = false;
   async function fetchSettingsFromBackground() {
     try {
       const response = await import_webextension_polyfill2.default.runtime.sendMessage({ type: "GET_SETTINGS" });
       if (response?.locked) {
         awaitingProfile = true;
         settingsCache = normalizeSettings({ ...settingsCache, profileUnavailable: true });
-        if (response.needsProfile && !unlockRequested2 && window.location.hostname === "csny.onelogin.com") {
-          unlockRequested2 = true;
-          import_webextension_polyfill2.default.runtime.sendMessage({ type: "REQUEST_SIGN_IN_UNLOCK" }).catch(() => {
-          });
+        if (response.needsProfile && window.location.hostname === "csny.onelogin.com") {
+          requestSignInUnlock(() => awaitingProfile);
         }
         return settingsCache;
       }
