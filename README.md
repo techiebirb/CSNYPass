@@ -11,6 +11,14 @@ Your saved login is encrypted and stays on your device. You choose how it's prot
 
 It works in desktop **Chrome** and **Edge** (version 116 or newer). For iPhone, iPad and Android, use the [userscript version](https://github.com/techiebirb/CSNY-Auto-Sign-in-Userscript) instead.
 
+## Quick install
+
+1. **[Add CSNYPass to Chrome from the Chrome Web Store](https://chromewebstore.google.com/detail/csnypass/nbncbljhiliddlnicaldhmelonmpgfie)** (works in Edge too).
+2. A welcome tab opens. Follow the short setup to save your email and choose how it's protected.
+3. Open the Blackbaud student portal and watch it fill in.
+
+Prefer to install it manually? See [Install](#install) below.
+
 ## See it work
 
 Both clips are real time, recorded on the real sign-in pages.
@@ -33,7 +41,9 @@ https://github.com/user-attachments/assets/de64fffd-f33b-4fb6-8c32-468f07ae08b1
 
 ## Install
 
-**Chrome Web Store:** coming soon. Until then, you can install it manually in a minute or two.
+**Chrome Web Store:** [install CSNYPass from the Chrome Web Store](https://chromewebstore.google.com/detail/csnypass/nbncbljhiliddlnicaldhmelonmpgfie). This is the easiest way, and it updates automatically. Edge can install Chrome Web Store extensions too.
+
+After installing, follow the setup steps in step 3 below. The manual steps are only needed if you want to run the code from this repository.
 
 ### Manual install (developer mode)
 
