@@ -8,7 +8,7 @@ on:
     tags: ["v*"]
 
 permissions:
-  contents: read
+  contents: write # creates the GitHub Release at the end
   id-token: write
 
 jobs:
@@ -71,3 +71,7 @@ jobs:
             "https://chromewebstore.googleapis.com/v2/$item:publish")
           echo "$publish" | jq '{state, error}'
           echo "$publish" | jq -e '.error == null' > /dev/null
+      - name: Create GitHub Release with generated notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" release/csnypass-v*.zip --title "$GITHUB_REF_NAME" --generate-notes --verify-tag

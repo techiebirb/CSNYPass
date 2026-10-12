@@ -84,12 +84,17 @@ One-time setup:
 
 None of these values are credentials, but keep them out of the repo, issues and logs anyway. The first version of a listing, and changes to permissions or hosts, are still done by hand in the dashboard. If you changed the listing's visibility in the dashboard, publish once by hand before the API will publish.
 
+After a successful submit, the workflow also creates a GitHub Release for the tag, with the zip attached and notes generated from the commits since the previous tag. That is the changelog. Write commit messages that read well in it.
+
+The Chrome Web Store has no per-version release-notes field, and the API doesn't edit listing text. When a release changes something users would care about (a new feature, a changed unlock behavior), also update the "What's new" part of the store description by hand in the dashboard.
+
 ## Customize selectors
 
 If Blackbaud or OneLogin changes their login page, edit [`shared/config/sites.js`](shared/config/sites.js), rebuild, and release.
 
 ## Conventions
 
+- Don't open a tab or page when the extension updates. Only a first install opens the welcome tab; an update must stay silent (`tests/signin-gate.test.js` checks this).
 - Keep [`shared/lib/dom.js`](shared/lib/dom.js) in sync with the userscript repo's `lib/dom.js`.
 - Keep URLs and selectors in [`shared/config/sites.js`](shared/config/sites.js) only.
 - Never log or commit real credentials.
