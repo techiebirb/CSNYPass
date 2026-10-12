@@ -1,0 +1,73 @@
+name: Publish to Chrome Web Store
+
+# Runs when you push a version tag (git tag v1.0.2 && git push --tags).
+# Signs in to Google with GitHub's short-lived OIDC token (Workload Identity Federation):
+# no key or password is stored anywhere. Google only accepts tokens from version tags of this repo.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: chrome-web-store
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: npm install --ignore-scripts
+      - run: npm test
+      - name: Tag must match the manifest version
+        run: |
+          version=$(node -p "require('./manifest.json').version")
+          [ "$GITHUB_REF_NAME" = "v$version" ] || { echo "Tag $GITHUB_REF_NAME does not match manifest version $version"; exit 1; }
+      - run: npm run package
+      - name: Check dist/ is up to date
+        run: |
+          git add -N dist
+          git diff --exit-code --stat dist || { echo "dist/ is out of date. Run 'npm run build' and commit it."; exit 1; }
+      - id: auth
+        uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/chromewebstore
+      - name: Upload and submit for review
+        env:
+          TOKEN: ${{ steps.auth.outputs.access_token }}
+          PUBLISHER_ID: ${{ secrets.CWS_PUBLISHER_ID }}
+          EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
+        run: |
+          set -euo pipefail
+          item="publishers/$PUBLISHER_ID/items/$EXTENSION_ID"
+          zip=$(ls release/csnypass-v*.zip)
+
+          upload=$(curl -sS -X POST -H "Authorization: Bearer $TOKEN" -T "$zip" \
+            "https://chromewebstore.googleapis.com/upload/v2/$item:upload")
+          state=$(echo "$upload" | jq -r '.uploadState // "ERROR"')
+          echo "Upload state: $state"
+
+          # Large uploads can still be processing; poll for up to about 2 minutes.
+          for _ in $(seq 1 12); do
+            [ "$state" = "IN_PROGRESS" ] || break
+            sleep 10
+            status=$(curl -sS -H "Authorization: Bearer $TOKEN" \
+              "https://chromewebstore.googleapis.com/v2/$item:fetchStatus")
+            state=$(echo "$status" | jq -r '.lastAsyncUploadState // "UNKNOWN"')
+            echo "Upload state: $state"
+          done
+          [ "$state" = "SUCCEEDED" ] || { echo "Upload did not succeed."; echo "$upload" | jq '.error // .'; exit 1; }
+
+          publish=$(curl -sS -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Length: 0" \
+            "https://chromewebstore.googleapis.com/v2/$item:publish")
+          echo "$publish" | jq '{state, error}'
+          echo "$publish" | jq -e '.error == null' > /dev/null

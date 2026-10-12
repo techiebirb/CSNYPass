@@ -64,6 +64,26 @@ Do not hand-edit files in `dist/` except by rebuilding. Source maps (`dist/*.map
 3. Provide screenshots (1280x800) of the settings page; the listing doc says which ones.
 4. Every store update needs a higher `version` than the one currently published.
 
+### Automatic publishing
+
+Pushing a `v<version>` tag (step 6 above) runs [`publish.yml`](.github/workflows/publish.yml). It runs the tests, checks the tag matches `manifest.json` and that `dist/` is current, then uploads the zip and submits it for review through the Chrome Web Store API. Google still reviews every update, so "published" means "submitted".
+
+It signs in with GitHub's short-lived OIDC token through Google Workload Identity Federation, so no password, key or token is stored anywhere. Google only accepts tokens from version tags of this repo.
+
+One-time setup:
+
+1. In [Google Cloud Console](https://console.cloud.google.com/), create a project and enable the **Chrome Web Store API**.
+2. Create a service account (for example `cws-publisher`) with no project roles.
+3. Under **IAM & Admin > Workload Identity Federation**, create a pool and an OIDC provider with issuer `https://token.actions.githubusercontent.com`, the attribute mapping `google.subject=assertion.sub` and `attribute.repository=assertion.repository`, and this attribute condition: `assertion.repository == '<owner>/<repo>' && assertion.ref.startsWith('refs/tags/v')`.
+4. On the pool, use **Grant access** with service account impersonation: pick the service account and the principal `repository` = `<owner>/<repo>`.
+5. In the [Developer Dashboard](https://chrome.google.com/webstore/devconsole), open **Account** and add the service account's email (a publisher can have one). Note the **Publisher ID** there.
+6. In the repo, go to **Settings > Environments**, create an environment named `chrome-web-store` (optionally add yourself as a required reviewer), and add these environment secrets:
+   - `GCP_WIF_PROVIDER`: the provider's full name, `projects/<number>/locations/global/workloadIdentityPools/<pool>/providers/<provider>`
+   - `GCP_SERVICE_ACCOUNT`: the service account's email
+   - `CWS_PUBLISHER_ID` and `CWS_EXTENSION_ID`
+
+None of these values are credentials, but keep them out of the repo, issues and logs anyway. The first version of a listing, and changes to permissions or hosts, are still done by hand in the dashboard. If you changed the listing's visibility in the dashboard, publish once by hand before the API will publish.
+
 ## Customize selectors
 
 If Blackbaud or OneLogin changes their login page, edit [`shared/config/sites.js`](shared/config/sites.js), rebuild, and release.
