@@ -3,10 +3,10 @@ import { normalizeSettings } from "../../shared/settings-schema.js";
 import {
   startAutomationEngine,
   runAutomationAfterSettingsChange,
-  notifyNavigationCompleted,
   setAutomationSettings,
   resetUnlockRequest,
   requestSignInUnlock,
+  resetPasswordAttempts,
 } from "./automation.js";
 
 let settingsCache = normalizeSettings({});
@@ -80,8 +80,8 @@ browser.runtime.onMessage.addListener((message) => {
       runAutomationAfterSettingsChange(settings);
     });
   }
-  if (message?.type === "NAVIGATION_COMPLETED") {
-    notifyNavigationCompleted();
+  if (message?.type === "LOGIN_PASSWORD_SAVED") {
+    resetPasswordAttempts();
   }
 });
 

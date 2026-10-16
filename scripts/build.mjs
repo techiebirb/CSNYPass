@@ -1,10 +1,27 @@
 import * as esbuild from "esbuild";
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
 const watch = process.argv.includes("--watch");
+
+// Bundled UI font (Figtree, OFL). The extension pages load it from popup/fonts/,
+// so no request ever leaves the device. Commit the copied files with the source.
+const FONT_WEIGHTS = [400, 500, 600, 700, 800];
+const fontSrc = path.join(root, "node_modules", "@fontsource", "figtree", "files");
+const fontDest = path.join(root, "popup", "fonts");
+fs.mkdirSync(fontDest, { recursive: true });
+for (const weight of FONT_WEIGHTS) {
+  const file = `figtree-latin-${weight}-normal.woff2`;
+  fs.copyFileSync(path.join(fontSrc, file), path.join(fontDest, file));
+}
+// The OFL requires its license to travel with the font files.
+fs.copyFileSync(
+  path.join(root, "node_modules", "@fontsource", "figtree", "LICENSE"),
+  path.join(fontDest, "OFL.txt")
+);
 
 const shared = {
   bundle: true,

@@ -27,7 +27,7 @@ Privacy first:
 • It only runs on the three sign-in sites above, and only on their actual sign-in screens.
 • Your OneLogin password is only ever released to the OneLogin page.
 
-Handy extras: a toolbar badge shows when your password is locked, and a right-click menu pauses auto sign-in for an hour. If a saved password is wrong, CSNYPass stops after two tries so your account isn't locked out.
+Handy extras: the toolbar badge shows OFF when auto sign-in is turned off or paused, and a right-click menu pauses it for an hour. If a saved password is wrong, CSNYPass stops after two tries so your account isn't locked out, shows a banner on the page, and marks the toolbar icon with "!".
 
 You still type your Blackbaud password yourself.
 
@@ -44,7 +44,6 @@ Fill in and submit the sign-in steps of the Collegiate School Blackbaud portal a
 | Permission | Why |
 |---|---|
 | `storage` | Saves the user's encrypted settings, lock settings, and short-lived unlock state on their device. |
-| `webNavigation` | Detects when a sign-in page finishes loading so the next sign-in step can be filled. |
 | `contextMenus` | Adds "CSNYPass settings" and "Pause auto sign-in for 1 hour" to the right-click menu on the sign-in sites. |
 | `alarms` | Re-locks the saved password when the unlock time the user chose runs out, and ends a pause. |
 | Host access: `collegiateschool.myschoolapp.com`, `app.blackbaud.com`, `csny.onelogin.com` | The three sign-in sites the extension fills in. No other sites are accessed. |
@@ -52,10 +51,18 @@ Fill in and submit the sign-in steps of the Collegiate School Blackbaud portal a
 
 ## Privacy practices tab
 
-- **Data collected:** Authentication information (email address and password the user enters), kept locally on the device.
+- **Data collected:** Authentication information (the password the user enters) and Personally identifiable information (their email address), kept locally on the device.
 - **Is data sold, used for unrelated purposes, or used for creditworthiness?** No to all.
 - **Is data transmitted off the device?** No.
 - **Remote code:** No. All code is in the package.
+
+## Changes in 1.1.1
+
+Removed the `webNavigation` permission, so the install prompt no longer says "Read your browsing history". Redesigned settings and welcome pages (bundled font, no network requests). Added the in-page "password rejected" banner.
+
+## What the publish workflow does and doesn't update
+
+`.github/workflows/publish.yml` uploads the package and submits it for review through the Chrome Web Store API. That API cannot edit listing fields, so everything on this page (description, screenshots, promo tiles, category, privacy practices, permission justifications, URLs) is edited by hand in the Developer Dashboard. Save those edits as a draft before pushing the version tag, so the submission carries both.
 
 ## Assets
 

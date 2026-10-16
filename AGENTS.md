@@ -4,7 +4,7 @@ Instructions for coding agents working in this repo (CSNYPass). Human contributo
 
 ## Project
 
-CSNYPass is a Manifest V3 browser extension (Chrome, Edge, Firefox 109+) that autofills the Collegiate Blackbaud and CSNY OneLogin sign-in steps. Credentials are stored encrypted in extension storage. Sister project: [Userscript Ver](https://github.com/techiebirb/CSNY-Auto-Sign-in-Userscript).
+CSNYPass is a Manifest V3 browser extension (Chrome, Edge; Firefox 109+ is declared but not loadable yet, because the manifest only has `background.service_worker`) that autofills the Collegiate Blackbaud and CSNY OneLogin sign-in steps. Credentials are stored encrypted in extension storage. Sister project: [Userscript Ver](https://github.com/techiebirb/CSNY-Auto-Sign-in-Userscript).
 
 ## Commands
 

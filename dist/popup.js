@@ -1263,7 +1263,7 @@
         if (!input) return;
         const show = input.type === "password";
         input.type = show ? "text" : "password";
-        btn.textContent = show ? "Hide" : "Show";
+        btn.dataset.visible = String(show);
         btn.setAttribute("aria-label", show ? "Hide password" : "Show password");
       });
     });
@@ -1517,24 +1517,44 @@
     showView("welcome");
     button?.focus();
   }
+  function confirmAndClearData() {
+    const dialog = document.querySelector("#reset-dialog");
+    const status = document.querySelector("#reset-status");
+    const confirmButton = document.querySelector("#btn-reset-confirm");
+    return new Promise((resolve) => {
+      let cleared = false;
+      setStatus(status, "", false);
+      confirmButton.disabled = false;
+      const onConfirm = async () => {
+        confirmButton.disabled = true;
+        let result;
+        try {
+          result = await import_webextension_polyfill.default.runtime.sendMessage({
+            type: "RESET_EXTENSION_DATA",
+            confirm: true
+          });
+        } catch {
+          result = null;
+        }
+        if (result?.ok) {
+          cleared = true;
+          dialog.close();
+          return;
+        }
+        confirmButton.disabled = false;
+        setStatus(status, result?.error || "Could not clear extension data.", false);
+      };
+      const onClose = () => {
+        confirmButton.removeEventListener("click", onConfirm);
+        resolve(cleared);
+      };
+      confirmButton.addEventListener("click", onConfirm);
+      dialog.addEventListener("close", onClose, { once: true });
+      dialog.showModal();
+    });
+  }
   async function handleResetExtensionData() {
-    const confirmed = window.confirm(
-      "Clear all saved email, passwords, and protection settings on this device? This cannot be undone."
-    );
-    if (!confirmed) return false;
-    let result;
-    try {
-      result = await import_webextension_polyfill.default.runtime.sendMessage({
-        type: "RESET_EXTENSION_DATA",
-        confirm: true
-      });
-    } catch {
-      return false;
-    }
-    if (!result?.ok) {
-      window.alert(result?.error || "Could not clear extension data.");
-      return false;
-    }
+    if (!await confirmAndClearData()) return false;
     sessionNonce = null;
     migrationPending = false;
     settingsCorrupt = false;

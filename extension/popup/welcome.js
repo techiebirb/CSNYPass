@@ -26,7 +26,7 @@ const STEP_TITLES = {
   protect: "Keep it protected",
   done: "All set",
 };
-const CONFETTI_COLORS = ["#00306b", "#f5a623", "#6cb4ee", "#0a6b32", "#e86a92"];
+const CONFETTI_COLORS = ["#00306b", "#f56800", "#6cb4ee", "#0a6b32"]; // brand tokens
 const CONFETTI_COUNT = 32;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 

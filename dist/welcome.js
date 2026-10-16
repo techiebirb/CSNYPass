@@ -1439,7 +1439,7 @@
         if (!input) return;
         const show = input.type === "password";
         input.type = show ? "text" : "password";
-        btn.textContent = show ? "Hide" : "Show";
+        btn.dataset.visible = String(show);
         btn.setAttribute("aria-label", show ? "Hide password" : "Show password");
       });
     });
@@ -1549,7 +1549,7 @@
     protect: "Keep it protected",
     done: "All set"
   };
-  var CONFETTI_COLORS = ["#00306b", "#f5a623", "#6cb4ee", "#0a6b32", "#e86a92"];
+  var CONFETTI_COLORS = ["#00306b", "#f56800", "#6cb4ee", "#0a6b32"];
   var CONFETTI_COUNT = 32;
   var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   var $ = (sel) => document.querySelector(sel);

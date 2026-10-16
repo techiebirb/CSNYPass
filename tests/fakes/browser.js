@@ -60,7 +60,10 @@ export const runtime = {
       runtime.installedListener = fn;
     },
   },
-  async openOptionsPage() {},
+  optionsOpened: 0,
+  async openOptionsPage() {
+    runtime.optionsOpened++;
+  },
 };
 
 export const alarms = {
@@ -91,8 +94,16 @@ export const tabs = {
     this.created.push(tab);
     return tab;
   },
-  query: async () => [],
-  sendMessage: async () => {},
+  /** Tabs `query` returns; tests set this to simulate open login tabs. */
+  open: [],
+  /** Every `sendMessage(tabId, message)` call, in order. */
+  sent: [],
+  async query() {
+    return this.open;
+  },
+  async sendMessage(tabId, message) {
+    this.sent.push({ tabId, message });
+  },
 };
 
 export function resetBrowser() {
@@ -101,7 +112,10 @@ export function resetBrowser() {
   alarms.created = [];
   windows.created = [];
   windows.focusedIds = new Set([1]);
+  runtime.optionsOpened = 0;
   tabs.created = [];
+  tabs.open = [];
+  tabs.sent = [];
   action.badge = "";
 }
 
@@ -117,7 +131,6 @@ const browser = {
     async update() {},
     onClicked: noopEvent,
   },
-  webNavigation: { onCompleted: noopEvent },
   action,
 };
 

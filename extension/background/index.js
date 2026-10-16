@@ -63,6 +63,9 @@ const CONTEXT_MENU_RESUME_ID = "collegiate-resume";
 const PAUSE_KEY = "csnyExtension.pausedUntil.v1";
 const PAUSE_ALARM = "csny-resume";
 const PAUSE_DURATION_MS = 60 * 60 * 1000;
+/** Session-only flag: OneLogin rejected the saved password twice (shows "!" on the badge). */
+const REJECTED_KEY = "csnyExtension.passwordRejected.v1";
+const REJECTED_BADGE_COLOR = "#dc2626";
 
 function isExtensionPageSender(sender) {
   const url = sender?.url || "";
@@ -116,10 +119,10 @@ function clearUnlockSessions() {
 
 // ---- Tabs and unlock window ----------------------------------------------------
 
-async function broadcast(message) {
+async function broadcast(message, { exceptTabId } = {}) {
   const tabs = await browser.tabs.query({ url: HOST_PATTERNS });
   for (const tab of tabs) {
-    if (tab.id == null) continue;
+    if (tab.id == null || tab.id === exceptTabId) continue;
     try {
       await browser.tabs.sendMessage(tab.id, message);
     } catch {
@@ -132,10 +135,22 @@ const broadcastSettingsChanged = async () => {
   await updateBadge();
   await broadcast({ type: "SETTINGS_CHANGED" });
 };
-const broadcastSettingsLocked = async () => {
+const broadcastSettingsLocked = async (options) => {
   await updateBadge();
-  await broadcast({ type: "SETTINGS_LOCKED" });
+  await broadcast({ type: "SETTINGS_LOCKED" }, options);
 };
+
+// ---- Rejected-password flag ----------------------------------------------------
+
+async function setPasswordRejected(rejected) {
+  if (rejected) await sessionSet(REJECTED_KEY, true);
+  else await sessionRemove(REJECTED_KEY);
+  await updateBadge();
+}
+
+async function isPasswordRejected() {
+  return (await sessionGet(REJECTED_KEY)) === true;
+}
 
 // ---- Pause (session-only; a browser restart ends it) ---------------------------
 
@@ -171,6 +186,11 @@ async function setPaused(paused) {
 
 async function updateBadge() {
   try {
+    if (await isPasswordRejected()) {
+      await browser.action?.setBadgeText?.({ text: "!" });
+      await browser.action?.setBadgeBackgroundColor?.({ color: REJECTED_BADGE_COLOR });
+      return;
+    }
     let text = "";
     if (await isPaused()) {
       text = "OFF";
@@ -357,7 +377,17 @@ async function handleUnlockBiometric(message) {
   return { ok: true, settings: loadResult.settings, sessionNonce };
 }
 
+/** A successful save may carry a fixed password: clear the warning, let tabs try again. */
 async function handleSaveSettings(message) {
+  const result = await saveSettings(message);
+  if (result?.ok) {
+    await setPasswordRejected(false);
+    await broadcast({ type: "LOGIN_PASSWORD_SAVED" });
+  }
+  return result;
+}
+
+async function saveSettings(message) {
   const lockConfigured = await isLockConfigured();
   const lockConfig = message?.lock;
   const migration = message?.migration === true;
@@ -472,6 +502,7 @@ async function handleUpdateLock(message) {
   }
 
   await clearUnlockSessions();
+  await setPasswordRejected(false);
   await broadcastSettingsChangedIfReady();
   return { ok: true };
 }
@@ -485,6 +516,7 @@ async function handleResetExtensionData(message) {
   await clearUnlockSessions();
   await sessionRemove(PROMPT_STATE_KEY);
   await setPaused(false);
+  await sessionRemove(REJECTED_KEY);
   await handleRelocked();
   return { ok: true };
 }
@@ -543,11 +575,22 @@ async function handleRequestSignInUnlock(sender) {
   return { ok: true };
 }
 
-async function handleFlowDone() {
+/**
+ * "Every sign-in" ends the unlock once the login is submitted. The tab that submitted keeps
+ * the password it already holds, so a rejected password can be retried there without another
+ * Touch ID / Face ID prompt; a reload or any other tab still has to ask.
+ */
+async function handleFlowDone(sender) {
   const cached = await readDekCache();
   if (cached?.policy !== "attempt") return { ok: true };
   await clearDekCache();
-  await handleRelocked();
+  await broadcastSettingsLocked({ exceptTabId: sender?.tab?.id });
+  return { ok: true };
+}
+
+async function handlePasswordRejected(sender) {
+  if (senderHost(sender) !== PASSWORD_HOST) return { ok: false, error: "Forbidden." };
+  await setPasswordRejected(true);
   return { ok: true };
 }
 
@@ -589,7 +632,22 @@ const MESSAGE_HANDLERS = {
     if (!isContentScriptSender(sender)) {
       return Promise.resolve({ ok: false, error: "Forbidden." });
     }
-    return handleFlowDone().catch(() => ({ ok: false }));
+    return handleFlowDone(sender).catch(() => ({ ok: false }));
+  },
+  PASSWORD_REJECTED: (message, sender) => {
+    if (!isContentScriptSender(sender)) {
+      return Promise.resolve({ ok: false, error: "Forbidden." });
+    }
+    return handlePasswordRejected(sender).catch(() => ({ ok: false }));
+  },
+  OPEN_SETTINGS: (message, sender) => {
+    if (!isContentScriptSender(sender)) {
+      return Promise.resolve({ ok: false, error: "Forbidden." });
+    }
+    return browser.runtime
+      .openOptionsPage()
+      .then(() => ({ ok: true }))
+      .catch(() => ({ ok: false }));
   },
 };
 
@@ -605,14 +663,6 @@ browser.runtime.onMessage.addListener((message, sender) => {
 });
 
 // ---- Wiring --------------------------------------------------------------------
-
-function isAutomationUrl(url) {
-  try {
-    return AUTOMATION_HOSTS.has(new URL(url).hostname);
-  } catch {
-    return false;
-  }
-}
 
 function registerSettingsContextMenu() {
   return browser.contextMenus
@@ -669,16 +719,3 @@ browser.contextMenus.onClicked.addListener((info) => {
 
 updateBadge();
 syncPauseMenu();
-
-browser.webNavigation.onCompleted.addListener((details) => {
-  if (details.frameId !== 0) return;
-  if (!isAutomationUrl(details.url)) return;
-  browser.tabs
-    .sendMessage(details.tabId, {
-      type: "NAVIGATION_COMPLETED",
-      url: details.url,
-    })
-    .catch(() => {
-      /* content script may not be ready yet */
-    });
-});

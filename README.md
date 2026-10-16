@@ -47,8 +47,8 @@ After installing, follow the setup steps in step 3 below. The manual steps are o
 
 ### Manual install (developer mode)
 
-1. Download this repository (**Code → Download ZIP**, then unzip it) or clone it. It already includes a pre-built `dist/` folder, so there's nothing to build. (Developers: see [CONTRIBUTING.md](CONTRIBUTING.md).)
-2. Open `chrome://extensions` (Edge: `edge://extensions`), turn on **Developer mode**, click **Load unpacked**, and choose the folder that contains `manifest.json`.
+1. Download `csnypass-v<version>.zip` from the [latest release](https://github.com/techiebirb/CSNYPass/releases/latest) and unzip it. (Developers working from a clone: run `npm run unpacked` and use `release/unpacked/`; see [CONTRIBUTING.md](CONTRIBUTING.md).)
+2. Open `chrome://extensions` (Edge: `edge://extensions`), turn on **Developer mode**, click **Load unpacked**, and choose the unzipped folder (the one that contains `manifest.json`).
 3. A **welcome tab** opens on first install. If you close it, click the CSNYPass toolbar icon and choose **Set up CSNYPass**. Setup has three short steps:
    - **Login:** your school **email**, an optional **OneLogin password**, and whether CSNYPass should click Next / Continue for you.
    - **Protection:** pick **Full auto** (set a **settings password**, or choose **Use my OneLogin password to unlock settings**) or **Touch ID / Face ID** (pick how long one unlock lasts, then confirm when prompted).
@@ -77,7 +77,7 @@ Here's what setup looks like. These clips are sped up, and the email and passwor
 
 - **Badge:** the toolbar icon shows **OFF** when automation is turned off or paused.
 - **Pause:** right-click a sign-in page and choose **Pause auto sign-in for 1 hour** (or **Resume auto sign-in**). Pausing needs no unlock, and it ends by itself after an hour or when you close the browser.
-- **Retry limit:** if OneLogin rejects the saved password, CSNYPass tries at most twice in 5 minutes per tab and then stops, so your account isn't locked out. Fix the saved password in settings and reload the page.
+- **Retry limit:** if OneLogin rejects the saved password, CSNYPass tries at most twice in 5 minutes per tab and then stops, so your account isn't locked out. When it stops, a red banner appears on the page (with an **Open settings** button) and the toolbar icon shows **!**. Save the corrected password in settings and the banner and badge clear and CSNYPass tries again, with no reload needed.
 - **Different account:** if the OneLogin username box already holds another email, CSNYPass leaves it alone.
 
 <img src="docs/images/right-click-menu.png" alt="Right-click menu on a sign-in page showing CSNYPass and Pause auto sign-in for 1 hour" width="420">
@@ -104,7 +104,7 @@ After the first save, settings open on a **locked** screen. Unlock it with your 
 | Sign-in & settings protection | Choose **Full auto** or **Touch ID / Face ID** (see below). You can switch later. |
 | Settings password | Full auto only. Needed to open the settings screen. |
 | Use OneLogin password to unlock settings | Full auto only. Your saved OneLogin password also unlocks settings, so it can't be left blank while this is on. |
-| How long one unlock lasts | Touch ID / Face ID only. **Every sign-in** (asks each time; the unlock ends after the login is submitted, or after 3 minutes), **Until I close the browser**, or **A set number of minutes**. |
+| How long one unlock lasts | Touch ID / Face ID only. **Every sign-in** (asks each time; the unlock ends after the login is submitted, or after 3 minutes. If OneLogin rejects the password, the same tab can retry once without asking again; a refresh or a new tab asks again), **Until I close the browser**, or **A set number of minutes**. |
 | Enable automation | Turns CSNYPass on or off. |
 | Email | Your login email (used for Blackbaud and OneLogin). |
 | Password (OneLogin) | Optional if you only use the Blackbaud email step. |

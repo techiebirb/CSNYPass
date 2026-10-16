@@ -22,11 +22,21 @@ Extension source lives under `extension/`, shared login logic under `shared/`, a
 | [`scripts/build.mjs`](scripts/build.mjs) | esbuild build (run with Node or Deno) |
 | [`scripts/package.mjs`](scripts/package.mjs) | Builds the Chrome Web Store upload zip in `release/` |
 | [`PRIVACY.md`](PRIVACY.md), [`docs/store-listing.md`](docs/store-listing.md) | Privacy policy and the text/answers used on the store listing |
-| [`dist/`](dist/) | Built `background.js`, `content.js`, `popup.js`, `unlock.js` (commit after changes) |
+| [`popup/base.css`](popup/base.css) | Shared design tokens and components for every UI page (colors, radii, section boxes, buttons, switches, dialog) |
+| [`icons/sprite.svg`](icons/sprite.svg) | Inline icon sprite (Phosphor, regular weight), used as `<use href="../icons/sprite.svg#name">` |
+| [`popup/fonts/`](popup/fonts/) | Figtree woff2 files, copied from `@fontsource/figtree` by `scripts/build.mjs` (commit them) |
+| [`dist/`](dist/) | Built `background.js`, `content.js`, `popup.js`, `unlock.js`, `welcome.js` (commit after changes) |
+
+## UI conventions
+
+- **Keep it simple.** The UI is deliberately plain: flat section boxes, one navy accent, softly squared buttons, native disclosure arrows. Don't add shadows, glows, gradients on controls, or decorative animation. Motion is limited to short state feedback (switch, hover, step change) and one small moment at the end of setup. Every animation respects `prefers-reduced-motion`, and the CSS describes the finished state so pages work if animation never runs. No animation library is used.
+- **Icons.** Add new icons to `icons/sprite.svg` from [Phosphor Icons](https://github.com/phosphor-icons/core) (MIT, regular weight) so the whole UI stays on one set.
+- **Color.** Navy (`--brand`) carries text accents and the primary button. Orange (`--accent`, the logo orange) is for illustration and small marks only, since it fails 4.5:1 as text on white. Form control edges use `--control-border` (3:1 on white).
+- **Password toggles.** The show/hide buttons hold two icons and swap them off `data-visible`. Don't set their `textContent`.
 
 ## Build
 
-After editing source files, rebuild and commit `dist/`:
+After editing source files, rebuild and commit `dist/` (and `popup/fonts/` if the font package changed):
 
 ```bash
 npm install
@@ -34,6 +44,12 @@ npm run build
 ```
 
 No Node? Deno works too: `deno install && deno run -A scripts/build.mjs`.
+
+### Load it in the browser
+
+Run `npm run unpacked` and load **`release/unpacked/`** from `chrome://extensions` (Developer mode, **Load unpacked**). Re-run it after changes, then click the extension's reload button.
+
+Don't load the repo root. Chrome scans every file under the folder you pick, including `node_modules`, and warns about key files that ship as test fixtures inside dependencies (for example `public-encrypt/test/*.pem`). Those are public fixtures, not secrets, but the staged folder contains only what the extension loads at runtime, so there is nothing to warn about.
 
 This produces classic script bundles in `dist/` (no ES modules) that match [`manifest.json`](manifest.json) service worker and page script loading.
 ## Test
@@ -104,5 +120,5 @@ If Blackbaud or OneLogin changes their login page, edit [`shared/config/sites.js
 - **Content script** requests full settings via `GET_SETTINGS` (content-script senders only) and caches them, listening for `SETTINGS_CHANGED` after saves.
 - **Extension pages** (settings page and unlock window) use the extension-page-only messages below. Only the service worker performs encryption and lock verification.
 - Extension-page-only messages: `GET_POPUP_STATE`, `UNLOCK_SETTINGS`, `UNLOCK_BIOMETRIC`, `SAVE_SETTINGS`, `UPDATE_LOCK`, `RESET_EXTENSION_DATA`.
-- Content-script-only: `GET_SETTINGS`, `FLOW_DONE`. Broadcast by the service worker to content scripts: `SETTINGS_CHANGED`, `NAVIGATION_COMPLETED`.
+- Content-script-only: `GET_SETTINGS`, `REQUEST_SIGN_IN_UNLOCK`, `FLOW_DONE`, `PASSWORD_REJECTED`, `OPEN_SETTINGS`. Broadcast by the service worker to content scripts: `SETTINGS_CHANGED`.
 - Handlers and sender checks are in `MESSAGE_HANDLERS` in [`extension/background/index.js`](extension/background/index.js).

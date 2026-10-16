@@ -2,6 +2,10 @@
  * Builds a Chrome Web Store / Edge Add-ons upload zip: release/csnypass-v<version>.zip.
  * Only what the extension loads at runtime goes in: no sources, tests or source maps.
  * Requires the `zip` command (preinstalled on macOS and most Linux).
+ *
+ * `--unpacked` stops after staging and keeps release/unpacked/ instead of zipping it. Load that
+ * folder via chrome://extensions > Load unpacked: unlike the repo root, it has no node_modules,
+ * so Chrome's "includes the key file ..." warnings (test fixtures inside dependencies) go away.
  */
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
@@ -20,10 +24,14 @@ execFileSync(process.execPath, [path.join(root, "scripts", "build.mjs")], {
   stdio: "inherit",
 });
 
+const unpacked = process.argv.includes("--unpacked");
 const releaseDir = path.join(root, "release");
-const stage = path.join(releaseDir, "stage");
+const stage = path.join(releaseDir, unpacked ? "unpacked" : "stage");
 const zipPath = path.join(releaseDir, `csnypass-v${manifest.version}.zip`);
-fs.rmSync(releaseDir, { recursive: true, force: true });
+// Clear only this run's outputs, so a zip build doesn't delete release/unpacked/ (and vice versa).
+fs.rmSync(stage, { recursive: true, force: true });
+if (!unpacked) fs.rmSync(zipPath, { force: true });
+fs.mkdirSync(releaseDir, { recursive: true });
 fs.mkdirSync(path.join(stage, "dist"), { recursive: true });
 
 const copy = (from, to = from) => {
@@ -42,6 +50,10 @@ for (const file of fs.readdirSync(path.join(root, "dist")).filter((f) => f.endsW
   fs.writeFileSync(path.join(stage, "dist", file), code);
 }
 
-execFileSync("zip", ["-r", "-X", zipPath, "."], { cwd: stage, stdio: "inherit" });
-fs.rmSync(stage, { recursive: true, force: true });
-console.log(`\nCreated ${path.relative(root, zipPath)}`);
+if (unpacked) {
+  console.log(`\nUnpacked extension ready: ${path.relative(root, stage)}/`);
+} else {
+  execFileSync("zip", ["-r", "-X", zipPath, "."], { cwd: stage, stdio: "inherit" });
+  fs.rmSync(stage, { recursive: true, force: true });
+  console.log(`\nCreated ${path.relative(root, zipPath)}`);
+}

@@ -30,6 +30,7 @@
           </p>
           <div class="section section-compact" id="unlock-bio-section" hidden>
             <button type="button" class="btn btn-primary btn-block" id="btn-unlock-bio">
+              <svg class="icon" aria-hidden="true"><use href="../icons/sprite.svg#fingerprint" /></svg>
               Unlock with Touch ID / Face ID
             </button>
           </div>
@@ -47,7 +48,8 @@
                 data-target="unlock-password"
                 aria-label="Show password"
               >
-                Show
+                <svg class="icon icon-show" aria-hidden="true"><use href="../icons/sprite.svg#eye" /></svg>
+                <svg class="icon icon-hide" aria-hidden="true"><use href="../icons/sprite.svg#eye-slash" /></svg>
               </button>
             </div>
           </div>
@@ -90,13 +92,7 @@
 
       <section id="view-welcome" class="view" hidden>
         <div class="panel-inner welcome-card">
-          <svg class="hero-key stagger" style="--i: 0" viewBox="0 0 64 64" aria-hidden="true">
-            <circle cx="22" cy="32" r="14" fill="#00306b" />
-            <circle cx="22" cy="32" r="5.5" fill="#fff" />
-            <rect x="34" y="29" width="26" height="6" rx="3" fill="#00306b" />
-            <rect x="48" y="35" width="5" height="8" rx="2" fill="#f5a623" />
-            <rect x="40" y="35" width="5" height="6" rx="2" fill="#f5a623" />
-          </svg>
+          <span class="hero-key stagger" style="--i: 0"><svg class="icon" aria-hidden="true"><use href="../icons/sprite.svg#key" /></svg></span>
           <h1 id="welcome-title" class="stagger" style="--i: 1">Welcome to CSNYPass</h1>
           <p id="welcome-text" class="hint stagger" style="--i: 2">
             Sign in to school in one click. Setup takes about a minute.
@@ -124,6 +120,22 @@
 
       <form id="view-editor" class="view panel-form" hidden novalidate>
         <div class="panel-inner">
+          <h1 class="sr-only">CSNYPass settings</h1>
+          <section class="section status-box">
+            <label class="switch-row">
+              <span class="status-text">
+                <span class="status-title">
+                  <span class="when-on">Autofill is on</span>
+                  <span class="when-off">Autofill is off</span>
+                </span>
+                <span class="status-sub">Fills your sign-in steps for you</span>
+              </span>
+              <span class="switch">
+                <input type="checkbox" id="edit-enabled" checked />
+                <span class="switch-slider" aria-hidden="true"></span>
+              </span>
+            </label>
+          </section>
           <section class="section">
             <h2 class="section-title">Login details</h2>
             <label class="field" for="edit-email">Email (school login username)</label>
@@ -137,19 +149,13 @@
                 data-target="edit-password"
                 aria-label="Show password"
               >
-                Show
+                <svg class="icon icon-show" aria-hidden="true"><use href="../icons/sprite.svg#eye" /></svg>
+                <svg class="icon icon-hide" aria-hidden="true"><use href="../icons/sprite.svg#eye-slash" /></svg>
               </button>
             </div>
           </section>
           <section class="section">
             <h2 class="section-title">Behavior</h2>
-            <label class="switch-row">
-              <span class="switch-label">Enable automation</span>
-              <span class="switch">
-                <input type="checkbox" id="edit-enabled" checked />
-                <span class="switch-slider" aria-hidden="true"></span>
-              </span>
-            </label>
             <label class="switch-row">
               <span class="switch-label">Automatically click Next / Continue</span>
               <span class="switch">
@@ -194,12 +200,18 @@
                 <label class="field" for="edit-lock-password">Settings password</label>
               <div class="password-wrap">
                 <input type="password" id="edit-lock-password" autocomplete="new-password" />
-                <button type="button" class="toggle-pw" data-target="edit-lock-password" aria-label="Show password">Show</button>
+                <button type="button" class="toggle-pw" data-target="edit-lock-password" aria-label="Show password">
+                <svg class="icon icon-show" aria-hidden="true"><use href="../icons/sprite.svg#eye" /></svg>
+                <svg class="icon icon-hide" aria-hidden="true"><use href="../icons/sprite.svg#eye-slash" /></svg>
+              </button>
               </div>
                 <label class="field" for="edit-lock-password-confirm">Confirm settings password</label>
               <div class="password-wrap">
                 <input type="password" id="edit-lock-password-confirm" autocomplete="new-password" />
-                <button type="button" class="toggle-pw" data-target="edit-lock-password-confirm" aria-label="Show password">Show</button>
+                <button type="button" class="toggle-pw" data-target="edit-lock-password-confirm" aria-label="Show password">
+                <svg class="icon icon-show" aria-hidden="true"><use href="../icons/sprite.svg#eye" /></svg>
+                <svg class="icon icon-hide" aria-hidden="true"><use href="../icons/sprite.svg#eye-slash" /></svg>
+              </button>
               </div>
               </div>
             </div>
@@ -249,17 +261,17 @@
               step="50"
               value="300"
             />
-            <p class="hint">Increase if Next stays gray (try 0.5&ndash;1 s).</p>
+            <p class="hint">Increase if Next stays gray (try 0.5 to 1 s).</p>
           </details>
           <details class="site-details editor-sites">
             <summary>Supported sites</summary>
             <ul class="site-list">
               <li>
-                <strong>Blackbaud student portal</strong> &mdash; fills email; you enter
+                <strong>Blackbaud student portal:</strong> fills your email. You enter your
                 Blackbaud password yourself.
               </li>
               <li>
-                <strong>Collegiate OneLogin</strong> &mdash; username + saved OneLogin password.
+                <strong>Collegiate OneLogin:</strong> username and saved OneLogin password.
               </li>
             </ul>
             <p class="hint">
@@ -282,6 +294,22 @@
         </div>
       </form>
     </main>
+    <dialog id="reset-dialog" class="confirm-dialog" aria-labelledby="reset-title">
+      <form method="dialog">
+        <h2 id="reset-title">Clear all saved data?</h2>
+        <p class="hint">
+          This erases your saved email, passwords and protection settings on this device. It
+          cannot be undone.
+        </p>
+        <p class="status" id="reset-status" role="alert"></p>
+        <div class="confirm-actions">
+          <button type="submit" value="cancel" class="btn btn-ghost" id="btn-reset-cancel">
+            Cancel
+          </button>
+          <button type="button" class="btn btn-danger" id="btn-reset-confirm">Clear data</button>
+        </div>
+      </form>
+    </dialog>
     <script src="../dist/popup.js"></script>
   </body>
 </html>

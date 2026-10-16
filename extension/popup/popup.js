@@ -216,26 +216,52 @@ function showWelcome() {
   button?.focus();
 }
 
+/**
+ * Native <dialog> instead of window.confirm: the toolbar popup closes when a native dialog
+ * takes focus. Esc and Cancel both close it. Resolves true only after the data is cleared;
+ * a failure stays in the dialog so the user can retry.
+ */
+function confirmAndClearData() {
+  const dialog = document.querySelector("#reset-dialog");
+  const status = document.querySelector("#reset-status");
+  const confirmButton = document.querySelector("#btn-reset-confirm");
+  return new Promise((resolve) => {
+    let cleared = false;
+    setStatus(status, "", false);
+    confirmButton.disabled = false;
+
+    const onConfirm = async () => {
+      confirmButton.disabled = true;
+      let result;
+      try {
+        result = await browser.runtime.sendMessage({
+          type: "RESET_EXTENSION_DATA",
+          confirm: true,
+        });
+      } catch {
+        result = null;
+      }
+      if (result?.ok) {
+        cleared = true;
+        dialog.close();
+        return;
+      }
+      confirmButton.disabled = false;
+      setStatus(status, result?.error || "Could not clear extension data.", false);
+    };
+    const onClose = () => {
+      confirmButton.removeEventListener("click", onConfirm);
+      resolve(cleared);
+    };
+
+    confirmButton.addEventListener("click", onConfirm);
+    dialog.addEventListener("close", onClose, { once: true });
+    dialog.showModal();
+  });
+}
+
 async function handleResetExtensionData() {
-  const confirmed = window.confirm(
-    "Clear all saved email, passwords, and protection settings on this device? This cannot be undone."
-  );
-  if (!confirmed) return false;
-
-  let result;
-  try {
-    result = await browser.runtime.sendMessage({
-      type: "RESET_EXTENSION_DATA",
-      confirm: true,
-    });
-  } catch {
-    return false;
-  }
-
-  if (!result?.ok) {
-    window.alert(result?.error || "Could not clear extension data.");
-    return false;
-  }
+  if (!(await confirmAndClearData())) return false;
 
   sessionNonce = null;
   migrationPending = false;

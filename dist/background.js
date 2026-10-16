@@ -1819,6 +1819,8 @@
   var PAUSE_KEY = "csnyExtension.pausedUntil.v1";
   var PAUSE_ALARM = "csny-resume";
   var PAUSE_DURATION_MS = 60 * 60 * 1e3;
+  var REJECTED_KEY = "csnyExtension.passwordRejected.v1";
+  var REJECTED_BADGE_COLOR = "#dc2626";
   function isExtensionPageSender(sender) {
     const url = sender?.url || "";
     return url.startsWith(import_webextension_polyfill6.default.runtime.getURL(""));
@@ -1861,10 +1863,10 @@
   function clearUnlockSessions() {
     return sessionRemove(UNLOCK_SESSIONS_KEY);
   }
-  async function broadcast(message) {
+  async function broadcast(message, { exceptTabId } = {}) {
     const tabs = await import_webextension_polyfill6.default.tabs.query({ url: HOST_PATTERNS });
     for (const tab of tabs) {
-      if (tab.id == null) continue;
+      if (tab.id == null || tab.id === exceptTabId) continue;
       try {
         await import_webextension_polyfill6.default.tabs.sendMessage(tab.id, message);
       } catch {
@@ -1875,10 +1877,18 @@
     await updateBadge();
     await broadcast({ type: "SETTINGS_CHANGED" });
   };
-  var broadcastSettingsLocked = async () => {
+  var broadcastSettingsLocked = async (options) => {
     await updateBadge();
-    await broadcast({ type: "SETTINGS_LOCKED" });
+    await broadcast({ type: "SETTINGS_LOCKED" }, options);
   };
+  async function setPasswordRejected(rejected) {
+    if (rejected) await sessionSet(REJECTED_KEY, true);
+    else await sessionRemove(REJECTED_KEY);
+    await updateBadge();
+  }
+  async function isPasswordRejected() {
+    return await sessionGet(REJECTED_KEY) === true;
+  }
   async function isPaused() {
     const until = await sessionGet(PAUSE_KEY);
     return typeof until === "number" && Date.now() < until;
@@ -1905,6 +1915,11 @@
   }
   async function updateBadge() {
     try {
+      if (await isPasswordRejected()) {
+        await import_webextension_polyfill6.default.action?.setBadgeText?.({ text: "!" });
+        await import_webextension_polyfill6.default.action?.setBadgeBackgroundColor?.({ color: REJECTED_BADGE_COLOR });
+        return;
+      }
       let text = "";
       if (await isPaused()) {
         text = "OFF";
@@ -2054,6 +2069,14 @@
     return { ok: true, settings: loadResult.settings, sessionNonce };
   }
   async function handleSaveSettings(message) {
+    const result = await saveSettings(message);
+    if (result?.ok) {
+      await setPasswordRejected(false);
+      await broadcast({ type: "LOGIN_PASSWORD_SAVED" });
+    }
+    return result;
+  }
+  async function saveSettings(message) {
     const lockConfigured = await isLockConfigured();
     const lockConfig = message?.lock;
     const migration = message?.migration === true;
@@ -2144,6 +2167,7 @@
       }
     }
     await clearUnlockSessions();
+    await setPasswordRejected(false);
     await broadcastSettingsChangedIfReady();
     return { ok: true };
   }
@@ -2156,6 +2180,7 @@
     await clearUnlockSessions();
     await sessionRemove(PROMPT_STATE_KEY);
     await setPaused(false);
+    await sessionRemove(REJECTED_KEY);
     await handleRelocked();
     return { ok: true };
   }
@@ -2198,11 +2223,16 @@
     await openUnlockWindow();
     return { ok: true };
   }
-  async function handleFlowDone() {
+  async function handleFlowDone(sender) {
     const cached = await readDekCache();
     if (cached?.policy !== "attempt") return { ok: true };
     await clearDekCache();
-    await handleRelocked();
+    await broadcastSettingsLocked({ exceptTabId: sender?.tab?.id });
+    return { ok: true };
+  }
+  async function handlePasswordRejected(sender) {
+    if (senderHost(sender) !== PASSWORD_HOST) return { ok: false, error: "Forbidden." };
+    await setPasswordRejected(true);
     return { ok: true };
   }
   function extensionPageOnly(handler, errorMessage) {
@@ -2242,7 +2272,19 @@
       if (!isContentScriptSender(sender)) {
         return Promise.resolve({ ok: false, error: "Forbidden." });
       }
-      return handleFlowDone().catch(() => ({ ok: false }));
+      return handleFlowDone(sender).catch(() => ({ ok: false }));
+    },
+    PASSWORD_REJECTED: (message, sender) => {
+      if (!isContentScriptSender(sender)) {
+        return Promise.resolve({ ok: false, error: "Forbidden." });
+      }
+      return handlePasswordRejected(sender).catch(() => ({ ok: false }));
+    },
+    OPEN_SETTINGS: (message, sender) => {
+      if (!isContentScriptSender(sender)) {
+        return Promise.resolve({ ok: false, error: "Forbidden." });
+      }
+      return import_webextension_polyfill6.default.runtime.openOptionsPage().then(() => ({ ok: true })).catch(() => ({ ok: false }));
     }
   };
   import_webextension_polyfill6.default.runtime.onMessage.addListener((message, sender) => {
@@ -2253,13 +2295,6 @@
     if (!handler) return Promise.resolve({ ok: false, error: "Unknown message type." });
     return handler(message, sender);
   });
-  function isAutomationUrl(url) {
-    try {
-      return AUTOMATION_HOSTS.has(new URL(url).hostname);
-    } catch {
-      return false;
-    }
-  }
   function registerSettingsContextMenu() {
     return import_webextension_polyfill6.default.contextMenus.removeAll().then(
       () => import_webextension_polyfill6.default.contextMenus.create({
@@ -2307,14 +2342,5 @@
   });
   updateBadge();
   syncPauseMenu();
-  import_webextension_polyfill6.default.webNavigation.onCompleted.addListener((details) => {
-    if (details.frameId !== 0) return;
-    if (!isAutomationUrl(details.url)) return;
-    import_webextension_polyfill6.default.tabs.sendMessage(details.tabId, {
-      type: "NAVIGATION_COMPLETED",
-      url: details.url
-    }).catch(() => {
-    });
-  });
 })();
 //# sourceMappingURL=background.js.map

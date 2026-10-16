@@ -194,7 +194,56 @@ test("toolbar badge: no LOCK indicator after an 'every sign-in' unlock is spent"
   assert.equal(action.badge, "");
 });
 
+function sentTo(tabId, type) {
+  return tabs.sent.filter((m) => m.tabId === tabId && m.message.type === type);
+}
+
+test("'every sign-in': FLOW_DONE locks other login tabs but not the one that submitted", async () => {
+  tabs.open = [{ id: 1 }, { id: 2 }];
+  const enrollment = await enrollBiometric("attempt");
+  const unlockPage = { url: "chrome-extension://test/popup/unlock.html" };
+  await send("UNLOCK_BIOMETRIC", unlockPage, { prfOutput: enrollment.prfOutput, forSignIn: true });
+  tabs.sent = [];
+
+  await send("FLOW_DONE", { tab: { ...SENDERS.onelogin.tab, id: 1 } });
+  assert.equal(sentTo(1, "SETTINGS_LOCKED").length, 0);
+  assert.equal(sentTo(2, "SETTINGS_LOCKED").length, 1);
+  assert.equal((await storage.readDekCache())?.forSignIn, undefined);
+});
+
+test("PASSWORD_REJECTED shows '!' on the badge until a save; Blackbaud may not report it", async () => {
+  const { action } = await import("./fakes/browser.js");
+  await storage.saveEncryptedSettings(SETTINGS);
+
+  assert.equal((await send("PASSWORD_REJECTED", SENDERS.school)).ok, false);
+  assert.equal(action.badge, "");
+
+  assert.equal((await send("PASSWORD_REJECTED", SENDERS.onelogin)).ok, true);
+  assert.equal(action.badge, "!");
+});
+
+test("saving settings clears the '!' badge and tells login tabs the password may have changed", async () => {
+  const { action } = await import("./fakes/browser.js");
+  tabs.open = [{ id: 7 }];
+  await storage.saveEncryptedSettings(SETTINGS);
+  await send("PASSWORD_REJECTED", SENDERS.onelogin);
+  assert.equal(action.badge, "!");
+
+  const saved = await send("SAVE_SETTINGS", POPUP_SENDER, { settings: SETTINGS });
+  assert.equal(saved.ok, true);
+  assert.equal(action.badge, "");
+  assert.equal(sentTo(7, "LOGIN_PASSWORD_SAVED").length, 1);
+});
+
+test("OPEN_SETTINGS is only honored from login pages", async () => {
+  assert.equal((await send("OPEN_SETTINGS", { tab: { url: "https://example.com/" } })).ok, false);
+  assert.equal(runtime.optionsOpened, 0);
+  assert.equal((await send("OPEN_SETTINGS", SENDERS.onelogin)).ok, true);
+  assert.equal(runtime.optionsOpened, 1);
+});
+
 const POPUP = { url: "chrome-extension://test/popup/popup.html" };
+const POPUP_SENDER = POPUP;
 
 test("same-as-login lock: a save with the OneLogin password blanked is refused", async () => {
   const settings = { email: "student@school.org", password: "s3cret-pass", enabled: true };

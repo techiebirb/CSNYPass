@@ -1,6 +1,6 @@
 # CSNYPass privacy policy
 
-_Last updated: 2026-10-05_
+_Last updated: 2026-10-15_
 
 CSNYPass is a browser extension that fills in the Collegiate Blackbaud and CSNY OneLogin sign-in pages. It is an independent project, not affiliated with Collegiate School, Blackbaud, or OneLogin.
 
@@ -10,6 +10,8 @@ CSNYPass is a browser extension that fills in the Collegiate Blackbaud and CSNY 
 - Your settings (automation on/off, auto-click, click delay) and the way you chose to protect them (settings password, or Touch ID / Face ID).
 
 All of this is kept **only on your device**, in the browser's extension storage. The email and password are encrypted with AES-256-GCM before they are written. How the keys are held is described under "Privacy and encryption" in the [README](README.md).
+
+The extension also keeps a little short-lived state in the browser's memory-only session storage, which is cleared when you close the browser: whether settings are currently unlocked, whether auto sign-in is paused, whether OneLogin rejected the saved password, and counts of recent failed unlock attempts. None of it leaves your device.
 
 ## What it does not do
 

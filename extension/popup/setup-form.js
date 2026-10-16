@@ -27,7 +27,8 @@ export function wirePasswordToggles() {
       if (!input) return;
       const show = input.type === "password";
       input.type = show ? "text" : "password";
-      btn.textContent = show ? "Hide" : "Show";
+      // The eye icons swap in CSS off this attribute; the button holds icons, not text.
+      btn.dataset.visible = String(show);
       btn.setAttribute("aria-label", show ? "Hide password" : "Show password");
     });
   });

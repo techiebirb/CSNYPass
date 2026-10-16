@@ -39,9 +39,19 @@ body {
 }
 
 .welcome-card .hero-key {
+  display: grid;
+  place-items: center;
   width: 4.5rem;
   height: 4.5rem;
-  animation: card-float 3s ease-in-out infinite;
+  margin: 0 auto;
+  border-radius: 50%;
+  background: var(--tint);
+  color: var(--brand);
+}
+
+.welcome-card .hero-key .icon {
+  width: 2.25rem;
+  height: 2.25rem;
 }
 
 .welcome-card h1 {
@@ -66,22 +76,41 @@ body {
   }
 }
 
-@keyframes card-float {
-  0%,
-  100% {
-    transform: translateY(0) rotate(-4deg);
-  }
-  50% {
-    transform: translateY(-5px) rotate(4deg);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .welcome-card .hero-key {
-    animation: none;
-  }
   .stagger {
     animation: none;
     opacity: 1;
   }
+}
+
+/* "Autofill is on / off" at the top of the editor: a plain section box with one switch. */
+.status-box .switch-row {
+  margin-top: 0;
+}
+
+.status-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  flex: 1;
+}
+
+.status-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.status-sub {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.status-box .when-off,
+.status-box:has(#edit-enabled:not(:checked)) .when-on {
+  display: none;
+}
+
+.status-box:has(#edit-enabled:not(:checked)) .when-off {
+  display: inline;
 }

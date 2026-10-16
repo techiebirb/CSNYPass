@@ -175,6 +175,7 @@
   "workspace": {
     "packageJson": {
       "dependencies": [
+        "npm:@fontsource/figtree@^5.3.0",
         "npm:esbuild@0.25",
         "npm:webextension-polyfill@0.12"
       ]

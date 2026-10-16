@@ -10,6 +10,7 @@ import {
   recordAutoSubmit,
 } from "../../shared/lib/attempts.js";
 import { findLabeledButton, getSiteConfigForLocation } from "../../shared/config/sites.js";
+import { hidePasswordRejectedNotice, showPasswordRejectedNotice } from "./notice.js";
 
 const SESSION_PREFIX = "csnyPass";
 /** Not under SESSION_PREFIX/ on purpose: navigation must not reset the submit limit. */
@@ -30,6 +31,8 @@ let refreshSettingsFn = null;
 let unlockRequested = false;
 /** A requestSignInUnlock call is already waiting for focus; repeat calls must not stack. */
 let unlockPending = false;
+/** The "rejected twice" notice was already shown on this page; a dismissed one stays dismissed. */
+let rejectionReported = false;
 
 /** The unlock is gone (time limit or sign-in done): the next password step may ask again. */
 export function resetUnlockRequest() {
@@ -386,8 +389,44 @@ async function requestPasswordUnlock(site) {
   );
 }
 
+/**
+ * Two submits already went through and the box is empty again: OneLogin rejected the saved
+ * password. Stop for good, drop the password held in this tab, and tell the user.
+ */
+function handlePasswordRejected() {
+  if (rejectionReported) return;
+  rejectionReported = true;
+  CollegiateDom.debug("Saved password was rejected twice; stopping");
+  if (currentSettings) {
+    currentSettings = { ...currentSettings, password: "", passwordLocked: false };
+  }
+  showPasswordRejectedNotice();
+  browser.runtime.sendMessage({ type: "PASSWORD_REJECTED" }).catch(() => {});
+}
+
+/** The saved password changed: the earlier rejections no longer count. */
+export function resetPasswordAttempts() {
+  const site = getSiteConfigForLocation(window.location);
+  if (site) clearAutoSubmits(site, "password");
+  rejectionReported = false;
+  hidePasswordRejectedNotice();
+  scheduleAutomation();
+}
+
 async function runOneLoginPasswordStep(settings, site) {
   if (shouldSkipOneLoginPasswordStep(site)) return true;
+
+  // Checked before any unlock prompt: a tab that has used up its tries must not ask for
+  // Touch ID / Face ID for a password it won't submit.
+  if (
+    settings.autoClickNext &&
+    site.getStep() === "password" &&
+    !(CollegiateDom.queryFirst(site.passwordSelectors)?.value || "").trim() &&
+    !autoSubmitAllowed(site, "password")
+  ) {
+    handlePasswordRejected();
+    return false;
+  }
 
   if (!settings.password?.trim()) {
     if (settings.passwordLocked) await requestPasswordUnlock(site);
@@ -535,16 +574,6 @@ function onNavigationLikeActivity() {
   scheduleAutomation();
 }
 
-function patchHistoryMethod(methodName) {
-  const original = history[methodName];
-  if (typeof original !== "function") return;
-  history[methodName] = function (...args) {
-    const result = original.apply(this, args);
-    onNavigationLikeActivity();
-    return result;
-  };
-}
-
 function startDomWatch() {
   if (domWatchStarted) return;
   domWatchStarted = true;
@@ -557,8 +586,9 @@ function startDomWatch() {
     onNavigationLikeActivity();
   });
 
-  patchHistoryMethod("pushState");
-  patchHistoryMethod("replaceState");
+  // pushState/replaceState calls made by the page are invisible from the content script's
+  // isolated world; the Navigation API reports them. Older browsers rely on the observer below.
+  window.navigation?.addEventListener("currententrychange", onNavigationLikeActivity);
 
   const observer = new MutationObserver(() => {
     clearTimeout(domDebounceTimer);
@@ -568,12 +598,6 @@ function startDomWatch() {
     childList: true,
     subtree: true,
   });
-}
-
-export function notifyNavigationCompleted() {
-  clearAllSessionGuards();
-  lastAutomationHref = "";
-  onNavigationLikeActivity();
 }
 
 export function runAutomationAfterSettingsChange(settings) {
@@ -588,6 +612,8 @@ export function startAutomationEngine(initialSettings, options = {}) {
   currentSettings = initialSettings;
   refreshSettingsFn =
     typeof options.refreshSettings === "function" ? options.refreshSettings : null;
+  // A fresh document starts clean (this used to ride on the webNavigation message).
+  clearAllSessionGuards();
   scheduleAutomation();
   startDomWatch();
 }
