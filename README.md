@@ -25,11 +25,11 @@ Both clips are real time, recorded on the real sign-in pages.
 
 **Full auto**
 
-https://github.com/user-attachments/assets/d5611d1f-1cb1-4fd5-a883-5a759bd64556
+https://github.com/user-attachments/assets/9fa20406-f76b-4554-b9d6-89e865c10605
 
 **Touch ID / Face ID**
 
-https://github.com/user-attachments/assets/de64fffd-f33b-4fb6-8c32-468f07ae08b1
+https://github.com/user-attachments/assets/f905f7c1-81c8-4fff-8c76-509405d464c5
 
 ## Supported sites
 
@@ -82,6 +82,10 @@ Here's what setup looks like. These clips are sped up, and the email and passwor
 
 <img src="docs/images/right-click-menu.png" alt="Right-click menu on a sign-in page showing CSNYPass and Pause auto sign-in for 1 hour" width="420">
 
+When OneLogin rejects the saved password twice, this is what you see:
+
+<img src="docs/images/rejected-banner.png" alt="OneLogin sign-in page with the red CSNYPass banner saying the saved password was rejected twice, an Open settings button, and the ! badge on the toolbar icon" width="620">
+
 ## Settings
 
 Click the **CSNYPass** toolbar icon to open settings in a small popup. If you prefer a bigger window, right-click the icon and choose **Options** to open the same page in a full tab.
@@ -94,7 +98,7 @@ After the first save, settings open on a **locked** screen. Unlock it with your 
     <th align="center">Touch ID / Face ID</th>
   </tr>
   <tr>
-    <td align="center"><img src="docs/images/settings-auto.gif" alt="Unlocking settings with a password" width="300"></td>
+    <td align="center"><img src="docs/images/settings-auto.gif" alt="Unlocking settings with a password" width="360"></td>
     <td align="center"><img src="docs/images/settings-touchid.gif" alt="Unlocking settings with Touch ID" width="360"></td>
   </tr>
 </table>

@@ -22,6 +22,7 @@ Extension source lives under `extension/`, shared login logic under `shared/`, a
 | [`scripts/build.mjs`](scripts/build.mjs) | esbuild build (run with Node or Deno) |
 | [`scripts/package.mjs`](scripts/package.mjs) | Builds the Chrome Web Store upload zip in `release/` |
 | [`PRIVACY.md`](PRIVACY.md), [`docs/store-listing.md`](docs/store-listing.md) | Privacy policy and the text/answers used on the store listing |
+| [`docs/MEDIA.md`](docs/MEDIA.md), [`scripts/media/rec.py`](scripts/media/rec.py) | How to retake the README and store screenshots, GIFs and videos, and the stop-on-command screen recorder it uses |
 | [`popup/base.css`](popup/base.css) | Shared design tokens and components for every UI page (colors, radii, section boxes, buttons, switches, dialog) |
 | [`icons/sprite.svg`](icons/sprite.svg) | Inline icon sprite (Phosphor, regular weight), used as `<use href="../icons/sprite.svg#name">` |
 | [`popup/fonts/`](popup/fonts/) | Figtree woff2 files, copied from `@fontsource/figtree` by `scripts/build.mjs` (commit them) |
@@ -71,7 +72,7 @@ Do not hand-edit files in `dist/` except by rebuilding. Source maps (`dist/*.map
 3. Run `npm test` and the build command above.
 4. If you touched [`shared/lib/webauthn.js`](shared/lib/webauthn.js), try Touch ID / Face ID by hand in Chrome or Edge.
 5. Commit source and rebuilt `dist/` together.
-6. Tag the release (`git tag v<version> && git push --tags`).
+6. Tag the release (`git tag v<version> && git push --tags`) if you want a marker in git. Tagging doesn't publish anything.
 
 ## Publish to the Chrome Web Store
 
@@ -80,29 +81,9 @@ Do not hand-edit files in `dist/` except by rebuilding. Source maps (`dist/*.map
 3. Provide screenshots (1280x800) of the settings page; the listing doc says which ones.
 4. Every store update needs a higher `version` than the one currently published.
 
-### Automatic publishing
+The full checklist (change review, commit message, dashboard fields, release) is in [`docs/PUBLISHING.md`](docs/PUBLISHING.md).
 
-Pushing a `v<version>` tag (step 6 above) runs [`publish.yml`](.github/workflows/publish.yml). It runs the tests, checks the tag matches `manifest.json` and that `dist/` is current, then uploads the zip and submits it for review through the Chrome Web Store API. Google still reviews every update, so "published" means "submitted".
-
-It signs in with GitHub's short-lived OIDC token through Google Workload Identity Federation, so no password, key or token is stored anywhere. Google only accepts tokens from version tags of this repo.
-
-One-time setup:
-
-1. In [Google Cloud Console](https://console.cloud.google.com/), create a project and enable the **Chrome Web Store API**.
-2. Create a service account (for example `cws-publisher`) with no project roles.
-3. Under **IAM & Admin > Workload Identity Federation**, create a pool and an OIDC provider with issuer `https://token.actions.githubusercontent.com`, the attribute mapping `google.subject=assertion.sub` and `attribute.repository=assertion.repository`, and this attribute condition: `assertion.repository == '<owner>/<repo>' && assertion.ref.startsWith('refs/tags/v')`.
-4. On the pool, use **Grant access** with service account impersonation: pick the service account and the principal `repository` = `<owner>/<repo>`.
-5. In the [Developer Dashboard](https://chrome.google.com/webstore/devconsole), open **Account** and add the service account's email (a publisher can have one). Note the **Publisher ID** there.
-6. In the repo, go to **Settings > Environments**, create an environment named `chrome-web-store` (optionally add yourself as a required reviewer), and add these environment secrets:
-   - `GCP_WIF_PROVIDER`: the provider's full name, `projects/<number>/locations/global/workloadIdentityPools/<pool>/providers/<provider>`
-   - `GCP_SERVICE_ACCOUNT`: the service account's email
-   - `CWS_PUBLISHER_ID` and `CWS_EXTENSION_ID`
-
-None of these values are credentials, but keep them out of the repo, issues and logs anyway. The first version of a listing, and changes to permissions or hosts, are still done by hand in the dashboard. If you changed the listing's visibility in the dashboard, publish once by hand before the API will publish.
-
-After a successful submit, the workflow also creates a GitHub Release for the tag, with the zip attached and notes generated from the commits since the previous tag. That is the changelog. Write commit messages that read well in it.
-
-The Chrome Web Store has no per-version release-notes field, and the API doesn't edit listing text. When a release changes something users would care about (a new feature, a changed unlock behavior), also update the "What's new" part of the store description by hand in the dashboard.
+The Chrome Web Store has no per-version release-notes field. When a release changes something users would care about (a new feature, a changed unlock behavior), also update the "What's new" part of the store description by hand in the dashboard.
 
 ## Customize selectors
 

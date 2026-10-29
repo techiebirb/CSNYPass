@@ -46,3 +46,7 @@ Run `npm test` and `npm run build` after changes. Tests can't exercise a real To
 Changes to what data is stored or which permissions/hosts are requested must also update `PRIVACY.md` and `docs/store-listing.md`.
 
 User-facing behavior changes go in README.md. Developer workflow changes go in CONTRIBUTING.md.
+
+Retaking README or store images, GIFs or videos: follow `docs/MEDIA.md`. Raw recordings are unblurred, so keep them out of the repo.
+
+Publishing a new version (release, tag, Chrome Web Store submission): follow `docs/PUBLISHING.md`.

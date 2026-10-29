@@ -6,7 +6,8 @@ const button = document.querySelector("#btn-unlock-window");
 
 function setStatus(message, ok) {
   statusEl.textContent = message || "";
-  statusEl.className = "status" + (message ? (ok ? " ok" : " err") : "");
+  statusEl.classList.toggle("ok", Boolean(message) && Boolean(ok));
+  statusEl.classList.toggle("err", Boolean(message) && !ok);
 }
 
 async function unlock({ automatic = false } = {}) {

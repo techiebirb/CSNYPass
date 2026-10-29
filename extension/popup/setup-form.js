@@ -11,7 +11,8 @@ import { BiometricError, createBiometricCredential } from "../../shared/lib/weba
 export function setStatus(el, message, ok) {
   if (!el) return;
   el.textContent = message || "";
-  el.className = "status" + (message ? (ok ? " ok" : " err") : "");
+  el.classList.toggle("ok", Boolean(message) && Boolean(ok));
+  el.classList.toggle("err", Boolean(message) && !ok);
 }
 
 export function setPrimaryBusy(button, busy) {

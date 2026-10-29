@@ -8,6 +8,7 @@ Copy for the Developer Dashboard. Keep it in sync with `PRIVACY.md` and `manifes
 **Privacy policy URL:** https://github.com/techiebirb/CSNYPass/blob/main/PRIVACY.md
 **Terms of service:** https://github.com/techiebirb/CSNYPass/blob/main/TERMS.md
 **Support / homepage URL:** https://github.com/techiebirb/CSNYPass
+**Last submitted version:** 1.2.0
 
 ## Summary (max 132 characters)
 
@@ -30,6 +31,8 @@ Privacy first:
 Handy extras: the toolbar badge shows OFF when auto sign-in is turned off or paused, and a right-click menu pauses it for an hour. If a saved password is wrong, CSNYPass stops after two tries so your account isn't locked out, shows a banner on the page, and marks the toolbar icon with "!".
 
 You still type your Blackbaud password yourself.
+
+What's new in 1.2.0: no more "Read your browsing history" permission, redesigned settings and welcome pages, a clear on-page banner when OneLogin rejects your saved password, and easier-to-see status messages in settings.
 
 CSNYPass is an independent project and is not affiliated with, endorsed by, or sponsored by Collegiate School, Blackbaud, or OneLogin.
 
@@ -56,20 +59,16 @@ Fill in and submit the sign-in steps of the Collegiate School Blackbaud portal a
 - **Is data transmitted off the device?** No.
 - **Remote code:** No. All code is in the package.
 
-## Changes in 1.1.1
+## Changes in 1.2.0 (since 1.0.2)
 
-Removed the `webNavigation` permission, so the install prompt no longer says "Read your browsing history". Redesigned settings and welcome pages (bundled font, no network requests). Added the in-page "password rejected" banner.
-
-## What the publish workflow does and doesn't update
-
-`.github/workflows/publish.yml` uploads the package and submits it for review through the Chrome Web Store API. That API cannot edit listing fields, so everything on this page (description, screenshots, promo tiles, category, privacy practices, permission justifications, URLs) is edited by hand in the Developer Dashboard. Save those edits as a draft before pushing the version tag, so the submission carries both.
+Removed the `webNavigation` permission, so the install prompt no longer says "Read your browsing history". Redesigned settings and welcome pages (bundled font, no network requests). Added the in-page "password rejected" banner. Status messages in settings now show as a banner above the footer.
 
 ## Assets
 
 Ready to upload from `docs/store/` (none of these ship in the extension package):
 
 - **Screenshots, 1280x800** (upload in this order):
-  1. `screenshot-1-welcome.png`: the welcome screen.
+  1. `screenshot-1-welcome.png`: the welcome screen, with the key points (open source, encrypted, stops after 2 wrong tries, pause from the right-click menu, Chrome and Edge).
   2. `screenshot-2-protection.png`: the Protection step with Full auto and Touch ID / Face ID.
   3. `screenshot-3-full-auto.png`: locked and unlocked settings (password).
   4. `screenshot-4-touch-id.png`: locked settings and the Touch ID prompt.
@@ -78,6 +77,6 @@ Ready to upload from `docs/store/` (none of these ship in the extension package)
 - **Marquee promo tile, 1400x560 (optional):** `promo-marquee.png`.
 - **Store icon, 128x128:** `icons/icon-128.png` (already in the package).
 
-The email and password are blurred in every image, and none of them show the Collegiate School logo or other school branding. Keep it that way if you retake any.
+The email and password are blurred in every image, and none of them show the Collegiate School logo or other school branding. Keep it that way if you retake any. Screenshots 1, 3, 4 and 5 and both promo tiles were built from frames of the README clips in `docs/images/` (screenshot 2 was kept from the earlier set), so they show version 1.2.0. How to capture, blur and render them is in [`MEDIA.md`](MEDIA.md#8-store-images).
 
 The videos in `docs/images/` (`signin-auto.mp4`, `signin-touchid.mp4`) are recorded on the real school sign-in pages, so they are for the GitHub README only. Don't use them in the store listing.

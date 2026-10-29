@@ -1249,7 +1249,8 @@
   function setStatus(el, message, ok) {
     if (!el) return;
     el.textContent = message || "";
-    el.className = "status" + (message ? ok ? " ok" : " err" : "");
+    el.classList.toggle("ok", Boolean(message) && Boolean(ok));
+    el.classList.toggle("err", Boolean(message) && !ok);
   }
   function setPrimaryBusy(button, busy) {
     if (!button) return;

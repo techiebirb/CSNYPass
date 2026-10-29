@@ -695,3 +695,29 @@ select {
     transition-duration: 0.001ms !important;
   }
 }
+
+/* Sign-in / save result, shown at the end of the card above the footer. Only visible with a message. */
+.status-banner {
+  margin-top: 0.75rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: var(--radius-field);
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.status-banner:empty {
+  display: none;
+}
+
+.status-banner.err {
+  color: var(--status-err);
+  background: #fdeeee;
+  border: 1px solid var(--status-err);
+}
+
+.status-banner.ok {
+  color: var(--status-ok);
+  background: #edf8f1;
+  border: 1px solid var(--status-ok);
+}
